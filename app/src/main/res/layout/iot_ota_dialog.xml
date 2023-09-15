@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/iot_ota_dialog"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="42dp"
+        android:text="@string/iot_upgrade_title"
+        android:textColor="@color/iot_upgrade_font_color"
+        android:textSize="29sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="42dp"
+        android:layout_marginTop="59dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <androidx.iot.widget.Progressbar
+            android:id="@+id/progress_bar"
+            android:layout_width="0dp"
+            android:layout_height="13dp"
+            android:layout_weight="1"
+            app:progress="0" />
+
+        <TextView
+            android:id="@+id/tv_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="0%"
+            android:textColor="@color/iot_upgrade_font_color"
+            android:textSize="29sp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="59dp"
+        android:text="@string/iot_upgrade_desc"
+        android:textColor="@color/iot_upgrade_font_color"
+        android:textSize="19sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="82dp"
+        android:background="@color/iot_upgrade_divider_color" />
+
+    <TextView
+        android:id="@+id/btn_cancel"
+        android:layout_width="match_parent"
+        android:layout_height="69dp"
+        android:gravity="center"
+        android:text="@string/iot_upgrade_cancel"
+        android:textColor="@color/iot_upgrade_button_color"
+        android:textSize="29sp" />
+
+</LinearLayout>

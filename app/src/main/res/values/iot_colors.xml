@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="iot_upgrade_dialog_color">#4D5D6E</color>
+    <color name="iot_upgrade_font_color">#FFFFFF</color>
+    <color name="iot_upgrade_button_color">#01D1F9</color>
+    <color name="iot_upgrade_divider_color">#182D44</color>
+
+    <color name="iot_tips_font_color">#FFFFFF</color>
+    <color name="iot_tips_msg_color">#4F8EE4</color>
+    <color name="iot_tips_failure_color">#FF4200</color>
+</resources>

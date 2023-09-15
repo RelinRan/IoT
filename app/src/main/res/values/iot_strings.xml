@@ -1,0 +1,5 @@
+<resources>
+    <string name="iot_upgrade_title">正在下载升级包，请稍后...</string>
+    <string name="iot_upgrade_desc">下载完成后自动安装，中间会重启，重启完成后使用</string>
+    <string name="iot_upgrade_cancel">取消下载</string>
+</resources>

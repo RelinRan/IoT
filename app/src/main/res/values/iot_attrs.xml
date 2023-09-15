@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <attr name="progress" format="integer|reference" />
+    <attr name="max" format="integer|reference" />
+    <attr name="radius" format="dimension|reference" />
+    <attr name="progressColor" format="color|reference" />
+    <attr name="backgroundColor" format="color|reference" />
+
+    <declare-styleable name="Progressbar">
+        <attr name="radius" />
+        <attr name="progress" />
+        <attr name="max" />
+        <attr name="progressColor" />
+        <attr name="backgroundColor" />
+    </declare-styleable>
+
+</resources>

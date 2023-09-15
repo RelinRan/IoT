@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="iot_upgrade_dialog_radius">16dp</dimen>
+    <dimen name="iot_toast_radius">90dp</dimen>
+    <dimen name="iot_toast_radius_bottom">30dp</dimen>
+</resources>
