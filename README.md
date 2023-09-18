@@ -223,6 +223,25 @@ link.remove(cid, mid);
 //断开连接
 link.disconnect();
 ```
+#### 日志文件
+```
+//初始化：项目名称/文件夹名称/日志文件前缀名
+LogFile log = new LogFile("Your Project Name","Your Dir Name","Log");
+//写入内容
+log.write("file content");
+
+//设置时间单位
+log.setTimeUnit(TimeUnit.HOURS);
+//设置第一次维护延迟时间
+log.setInitialDelay(0);
+//设置文件有效期
+log.setExp(7*24);
+//开始自动维护检查
+log.startRM();
+
+//#onDestory()
+log.cancel();
+```
 
 #### 日志服务
 
@@ -279,3 +298,4 @@ public void onMessageReceived(String topic, MqttMessage message) {
     }
 }
 ```
+
