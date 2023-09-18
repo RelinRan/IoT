@@ -112,17 +112,6 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
         print("service url", options.getHost());
     }
 
-    /**
-     * 是否已连接
-     *
-     * @return
-     */
-    public boolean isConnected() {
-        if (client == null) {
-            return false;
-        }
-        return client.isConnected();
-    }
 
     @Override
     public Imqtt connect() {
@@ -145,6 +134,14 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
         } catch (MqttException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public boolean isConnected() {
+        if (client == null) {
+            return false;
+        }
+        return client.isConnected();
     }
 
     //*******************状态**********************

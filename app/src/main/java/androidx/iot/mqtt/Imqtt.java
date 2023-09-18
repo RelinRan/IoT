@@ -18,6 +18,12 @@ public interface Imqtt {
     void disconnect();
 
     /**
+     * 是否已连接
+     * @return
+     */
+    boolean isConnected();
+
+    /**
      * 发布消息。封装publish方法，用于向Topic /${prodcutKey}/${deviceName}/user/update发布指定payload的消息
      *
      * @param topic    主题

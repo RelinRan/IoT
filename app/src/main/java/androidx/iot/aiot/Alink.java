@@ -99,6 +99,10 @@ public class Alink {
      * @param topic 主题
      */
     public void subscribe(String topic) {
+        if (!mqtt.isConnected()) {
+            System.err.println("MQTT did not connect successfully");
+            return;
+        }
         mqtt.subscribe(topic);
     }
 
@@ -139,6 +143,10 @@ public class Alink {
      * @param payload 内容
      */
     public void publish(Topic topic, String payload) {
+        if (!mqtt.isConnected()) {
+            System.err.println("MQTT did not connect successfully");
+            return;
+        }
         publish(topic.real(license.getProductKey(), license.getDeviceName()), payload);
     }
 

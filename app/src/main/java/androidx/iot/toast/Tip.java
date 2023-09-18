@@ -20,14 +20,14 @@ public interface Tip {
      * @param icon 图标
      * @param msg  消息
      */
-    void successful(int icon, String msg);
+    void success(int icon, String msg);
 
     /**
      * 成功
      *
      * @param msg 消息
      */
-    void successful(String msg);
+    void success(String msg);
 
     /**
      * 失败

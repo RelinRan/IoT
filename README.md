@@ -91,14 +91,32 @@ res/xml/path.xml
         path="/storage/emulated/0/Android/data/${applicationId}/files/TBS" />
 </paths>
 ```
+#### 通用MQTT
+连接MQTT
+```
+MqttOption option = new MqttOption();
+option.setHost("xxx");
+option.setUserName("xxx");
+option.setClientId("xxx");
+option.setPassword("xxx");
+Mqtt mqtt = Mqtt.initialize(context,option);
+long cid = mqtt.addConnectListener(xxx);
+long mid = mqtt.addMessageListener(xxx);
+mqtt.connect();
+```
+移除监听
+```
+Mqtt client = Mqtt.client();
+client.remove(cid.mid);
+```
 
-#### 初始化
+#### 阿里初始化
 注册三元组许可文件
 
 ```
 License.initialize("You Project Name","License","triplet.txt");
 ```
-triplet.txt文件
+U盘注册三元组（文件名：triplet.txt）
 
 ```
 {"productKey":"xxx","deviceName":"xxx","deviceSecret":"xxx"}
@@ -133,7 +151,7 @@ public void onLicense(String content) {
     //三元组内容
 }
 ```
-#### MQTT
+#### 阿里MQTT
 
 连接服务
 
@@ -205,6 +223,7 @@ link.remove(cid, mid);
 //断开连接
 link.disconnect();
 ```
+
 #### 日志服务
 
 ```
@@ -220,12 +239,22 @@ Map<String,Object> map = new HashMap<>();
 map.put("power",1);
 Link.mqtt().api().publishProperty(map);
 ```
+#### 事件上报
+
+```
+//参数
+Map<String, Object> params = new HashMap<>();
+params.put("name", "value");
+//functionBlockId 自定义模块id,默认模块为空.
+//identifier      属性标识符
+Link.mqtt().api().publishEvent("functionBlockId", "identifier", params);
+```
 #### OTA
-订阅升级主题信息
+订阅升级主题
 ```
 Link.mqtt().api().subscribeOTA();
 ```
-平台推送OTA升级
+平台推送升级
 ```
 @Override
 public void onMessageReceived(String topic, MqttMessage message) {
@@ -235,7 +264,7 @@ public void onMessageReceived(String topic, MqttMessage message) {
     }
 }
 ```
-用户自己主动升级
+用户主动升级
 ```
 //default为模块名称
 Link.mqtt().api().publishOTAGet("default");

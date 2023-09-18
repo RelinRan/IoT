@@ -64,13 +64,13 @@ public class Tooltip implements Tip {
     }
 
     @Override
-    public void successful(int icon, String msg) {
+    public void success(int icon, String msg) {
         show(R.drawable.iot_tips_msg, icon, msg);
     }
 
     @Override
-    public void successful(String msg) {
-        successful(R.mipmap.ic_iot_icon, msg);
+    public void success(String msg) {
+        success(R.mipmap.ic_iot_icon, msg);
     }
 
     @Override
