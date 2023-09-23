@@ -177,14 +177,6 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
 
     @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
-        if (debug) {
-            try {
-                MqttMessage message = token.getMessage();
-                print("delivery id:", message.getId() + "");
-            } catch (MqttException e) {
-                throw new RuntimeException(e);
-            }
-        }
         if (messageHashMap != null) {
             for (Long key : messageHashMap.keySet()) {
                 messageHashMap.get(key).onMessageDelivered(token);
