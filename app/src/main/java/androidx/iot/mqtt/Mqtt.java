@@ -1,7 +1,6 @@
 package androidx.iot.mqtt;
 
 import android.content.Context;
-import android.util.Log;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -47,7 +46,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
 
 
     public Mqtt() {
-        Log.i(TAG, "instantiation mqtt");
+        android.util.Log.i(TAG, "instantiation mqtt");
     }
 
     /**
@@ -147,7 +146,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     //*******************状态**********************
     @Override
     public void connectionLost(Throwable cause) {
-        Log.i(TAG, "connection lost");
+        android.util.Log.i(TAG, "connection lost");
         try {
             if (client != null) {
                 client.connect();
@@ -188,7 +187,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
 
     @Override
     public void onSuccess(IMqttToken token) {
-        Log.i(TAG, "connection successful");
+        android.util.Log.i(TAG, "connection successful");
         if (connectHashMap != null) {
             for (Long key : connectHashMap.keySet()) {
                 connectHashMap.get(key).onConnectionSuccessful(token);
@@ -198,7 +197,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
 
     @Override
     public void onFailure(IMqttToken token, Throwable exception) {
-        Log.i(TAG, "connection failed ");
+        android.util.Log.i(TAG, "connection failed ");
         if (connectHashMap != null) {
             for (Long key : connectHashMap.keySet()) {
                 connectHashMap.get(key).onConnectionFailed(token, exception);
@@ -331,7 +330,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
         for (int i = 0; i < length; i++) {
             builder.append(contents[i]).append(" ");
         }
-        MqttLog.i(TAG, builder.toString());
+        Log.i(TAG, builder.toString());
     }
 
 }
