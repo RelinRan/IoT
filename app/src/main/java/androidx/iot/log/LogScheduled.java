@@ -9,9 +9,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 文件维护
+ * 日志定时任务
  */
-public class FileRM {
+public class LogScheduled {
 
     private File folder;
     /**
@@ -48,7 +48,16 @@ public class FileRM {
      */
     private SimpleDateFormat dateFormat;
 
-    public FileRM(File folder, String prefix, String suffix, int exp, TimeUnit unit) {
+    /**
+     * 构造
+     *
+     * @param folder 文件夹
+     * @param prefix 前缀
+     * @param suffix 后缀
+     * @param exp    有效期
+     * @param unit   时间单位
+     */
+    public LogScheduled(File folder, String prefix, String suffix, int exp, TimeUnit unit) {
         this.folder = folder;
         this.prefix = prefix;
         this.suffix = suffix;

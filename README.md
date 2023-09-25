@@ -224,6 +224,7 @@ link.remove(cid, mid);
 link.disconnect();
 ```
 #### 日志文件
+通用日志
 ```
 //初始化：项目名称/文件夹名称/日志文件前缀名
 LogFile log = new LogFile("Your Project Name","Your Dir Name","Log");
@@ -237,10 +238,27 @@ log.setInitialDelay(0);
 //设置文件有效期
 log.setExp(7*24);
 //开始自动维护检查
-log.startRM();
+log.startScheduled();
 
 //#onDestory()
 log.cancel();
+```
+报错日志
+```
+//注意：使用这个类需要提前申请文件写入、读取权限，在Android 6.0需要动态申请权限
+CrashLog log = CrashLog.initialize(context);//初始化
+log.setBugly("Bugly APP ID");//腾讯Bugly APP ID
+log.setFolder("YourProjectName","Crash");//文件夹
+log.setSuffix("crash");//文件前缀
+log.setTimeUnit(TimeUnit.HOURS);//时间单位
+log.setInitialDelay(0);//定时任务第一次延迟时间
+log.setExp(7*24);//文件过期时间
+log.setPeriod(4);//检查频率
+
+log.startScheduled();//开启定时任务
+
+//#destory
+log.cancel();//取消所有任务操作
 ```
 
 #### 日志服务

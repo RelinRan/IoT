@@ -1,6 +1,8 @@
 package androidx.iot.utils;
 
 import android.content.Context;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.storage.StorageManager;
 import android.provider.Settings;
@@ -11,7 +13,12 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.Inet4Address;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 /**
@@ -121,6 +128,45 @@ public class Device {
             e.printStackTrace();
         }
         return paths;
+    }
+
+    /**
+     * 获取Wifi ip地址
+     * <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+     * @param context
+     * @return
+     */
+    public static String getWifiIpAddress(Context context) {
+        WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        int ipAddress = wifiInfo.getIpAddress();
+        return String.format("%d.%d.%d.%d",
+                (ipAddress & 0xff),
+                (ipAddress >> 8 & 0xff),
+                (ipAddress >> 16 & 0xff),
+                (ipAddress >> 24 & 0xff));
+    }
+
+    /**
+     * 获取网口IP
+     * @return
+     */
+    public static String getInterfaceIpAddress(){
+        try {
+            for (Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces(); networkInterfaces.hasMoreElements();) {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+                if (networkInterface.isUp() && !networkInterface.isLoopback()) {
+                    for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                        if (interfaceAddress.getAddress() instanceof Inet4Address) {
+                            return interfaceAddress.getAddress().getHostAddress();
+                        }
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
 }

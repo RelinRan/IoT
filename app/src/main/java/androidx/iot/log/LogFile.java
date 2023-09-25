@@ -59,7 +59,7 @@ public class LogFile {
     /**
      * 文件运维
      */
-    private FileRM om;
+    private LogScheduled scheduled;
     /**
      * 检查第一次延时
      */
@@ -294,23 +294,23 @@ public class LogFile {
     /**
      * 开始文件维护
      */
-    public void startRM() {
-        if (om != null) {
+    public void startScheduled() {
+        if (scheduled != null) {
             return;
         }
-        om = new FileRM(getFolder(), prefix, suffix, exp, timeUnit);
-        om.setPeriod(period);
-        om.setInitialDelay(initialDelay);
-        om.start();
+        scheduled = new LogScheduled(getFolder(), prefix, suffix, exp, timeUnit);
+        scheduled.setPeriod(period);
+        scheduled.setInitialDelay(initialDelay);
+        scheduled.start();
     }
 
     /**
      * 停止文件维护
      */
-    public void stopRM() {
-        if (om != null) {
-            om.cancel();
-            om = null;
+    public void stopScheduled() {
+        if (scheduled != null) {
+            scheduled.cancel();
+            scheduled = null;
         }
     }
 
@@ -324,10 +324,7 @@ public class LogFile {
         if (reader != null) {
             reader.cancel();
         }
-        if (om != null) {
-            om.cancel();
-            om = null;
-        }
+        stopScheduled();
     }
 
 }

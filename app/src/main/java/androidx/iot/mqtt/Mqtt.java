@@ -36,10 +36,6 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
      */
     private boolean debug;
     /**
-     * 连接状态
-     */
-    private boolean connected;
-    /**
      * MQTT
      */
     private static Mqtt mqtt;

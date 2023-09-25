@@ -13,7 +13,6 @@ import androidx.iot.mqtt.MqttOption;
 public class Link extends Mqtt {
 
     public final static String TAG = Link.class.getSimpleName();
-
     /**
      * 阿里物联网
      */
