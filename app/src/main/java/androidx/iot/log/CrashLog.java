@@ -117,10 +117,7 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * @param context
      */
     private CrashLog(Context context) {
-        this.context = context;
-        setFolder("IoT", "Exception");
-        setPrefix("exp");
-        Thread.setDefaultUncaughtExceptionHandler(this);
+        this(context, "IoT", "Exception", "exp");
     }
 
     /**
@@ -156,7 +153,7 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * @return
      */
     private CrashLog(Context context, String project, String dir, String prefix) {
-        super(project, dir, prefix);
+        super(context,project, dir, prefix);
         this.context = context;
         Thread.setDefaultUncaughtExceptionHandler(this);
     }

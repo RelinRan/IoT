@@ -1,6 +1,7 @@
 package androidx.iot.aiot;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
@@ -431,6 +432,13 @@ public class License {
      * @return
      */
     public File getLicenseDir() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+            File dirFile = getContext().getExternalFilesDir(dir);
+            if (!dirFile.exists()) {
+                dirFile.mkdirs();
+            }
+            return dirFile;
+        }
         File projectDir = new File(Environment.getExternalStorageDirectory(), project);
         if (!projectDir.exists()) {
             projectDir.mkdirs();

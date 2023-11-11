@@ -1,5 +1,7 @@
 package androidx.iot.log;
 
+import android.content.Context;
+import android.os.Build;
 import android.os.Environment;
 
 import androidx.iot.text.OnReadListener;
@@ -68,12 +70,25 @@ public class LogFile {
      * 检查时段
      */
     private int period = 8;
+    /**
+     * 上下文
+     */
+    private Context context;
 
     /**
      * 日志文件
      */
-    public LogFile() {
-        initialize("IoT", "Log", "log");
+    public LogFile(Context context) {
+        initParams(context,"IoT", "Log", "log");
+    }
+
+    /**
+     * 上下文
+     *
+     * @return
+     */
+    public Context getContext() {
+        return context;
     }
 
     /**
@@ -83,19 +98,25 @@ public class LogFile {
      * @param dir     文件夹
      * @param prefix  文件前缀
      */
-    public LogFile(String project, String dir, String prefix) {
-        initialize(project,dir,prefix);
+    public LogFile(Context context,String project, String dir, String prefix) {
+        initParams(context,project, dir, prefix);
     }
 
     /**
      * 初始化操作
+     *
      * @param project 项目名称
      * @param dir     文件夹
      * @param prefix  文件前缀
      */
-    protected void initialize(String project, String dir, String prefix) {
+    private void initParams(Context context,String project, String dir, String prefix) {
+        this.context = context;
         dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        setRoot(Environment.getExternalStorageDirectory());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            setRoot(context.getExternalFilesDir(null));
+        } else {
+            setRoot(Environment.getExternalStorageDirectory());
+        }
         setFolder(project, dir);
         setPrefix(prefix);
         setSuffix(".txt");
@@ -149,8 +170,10 @@ public class LogFile {
     public File getFolder() {
         StringBuilder builder = new StringBuilder();
         builder.append(root);
-        builder.append(File.separator);
-        builder.append(project);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            builder.append(File.separator);
+            builder.append(project);
+        }
         builder.append(File.separator);
         builder.append(dir);
         File folder = new File(builder.toString());
@@ -258,7 +281,7 @@ public class LogFile {
     public void write(String content, boolean append) {
         StringBuilder builder = new StringBuilder();
         builder.append(getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
-        builder.append("    ");
+        builder.append("  ");
         builder.append(content);
         builder.append("\n");
         if (writer == null) {

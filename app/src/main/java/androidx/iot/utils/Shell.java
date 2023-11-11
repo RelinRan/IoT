@@ -26,6 +26,10 @@ public class Shell {
      * 类型 - 安装
      */
     public static final int INSTALL = 2;
+    /**
+     * 类型 - 启动
+     */
+    public static final int LAUNCHER = 3;
 
     /**
      * 重启设备
@@ -41,6 +45,62 @@ public class Shell {
      */
     public static Future reboot() {
         return reboot(null);
+    }
+
+    /**
+     * 启动APP
+     * @param context 上下文
+     * @return
+     */
+    public static Future launch(Context context) {
+        return launch(context, null);
+    }
+
+    /**
+     * 启动app
+     *
+     * @param context  上下文
+     * @param listener 监听
+     * @return
+     */
+    public static Future launch(Context context, OnExecuteListener listener) {
+        ComponentName componentName = Apk.getLauncherComponentName(context);
+        if (componentName != null) {
+            String packageName = componentName.getPackageName();
+            String className = componentName.getClassName();
+            return launch(packageName, className, listener);
+        } else {
+            Log.e(TAG, "launch failed componentName is null");
+        }
+        return null;
+    }
+
+    /**
+     * 启动app
+     *
+     * @param packageName 包名
+     * @param className   类名（包含路径）
+     * @return
+     */
+    public static Future launch(String packageName, String className) {
+        return launch(packageName,className,null);
+    }
+
+    /**
+     * 启动app
+     *
+     * @param packageName 包名
+     * @param className   类名（包含路径）
+     * @param listener    监听
+     * @return
+     */
+    public static Future launch(String packageName, String className, OnExecuteListener listener) {
+        if (isRooted()) {
+            return execute(LAUNCHER, new String[]{"am start -n " + packageName + "/" + className}, listener);
+        } else {
+            Log.e(TAG, "launch failed not root");
+        }
+        return null;
     }
 
     /**
@@ -90,7 +150,7 @@ public class Shell {
             }
         } else {
             code = -1;
-            msg = "apk is not exist path = "+path;
+            msg = "apk is not exist path = " + path;
         }
         Log.e(TAG, "code = " + code + ",msg = " + msg);
         if (listener != null) {

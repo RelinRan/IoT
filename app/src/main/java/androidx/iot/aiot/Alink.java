@@ -273,7 +273,7 @@ public class Alink {
             return false;
         }
         String version = response.getData().getVersion();
-        return Apk.isUpgrade(context, version);
+        return Apk.isNewVersion(context, version);
     }
 
     /**
@@ -291,7 +291,7 @@ public class Alink {
         String version = response.getData().getVersion();
         String filename = Apk.getApplicationName(context) + "_" + version + ".apk";
         String url = response.getData().getUrl();
-        boolean isUpgrade = Apk.isUpgrade(context, version);
+        boolean isUpgrade = Apk.isNewVersion(context, version);
         if (isUpgrade) {
             if (otaDialog == null) {
                 otaDialog = new OTADialog(context);

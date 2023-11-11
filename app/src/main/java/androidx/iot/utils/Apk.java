@@ -72,13 +72,13 @@ public class Apk {
      * 比较版本号是否需要升级
      *
      * @param context    上下文
-     * @param apiVersion 接口版本
+     * @param version 接口版本
      * @return 是否需要升级
      */
-    public static boolean isUpgrade(Context context, String apiVersion) {
+    public static boolean isNewVersion(Context context, String version) {
         String localVersion = getVersionName(context);
         String localItems[] = localVersion.split("\\.");
-        String apiItems[] = apiVersion.split("\\.");
+        String apiItems[] = version.split("\\.");
         int localIntItems[] = toIntArray(localItems);
         int apiIntItems[] = toIntArray(apiItems);
         if (localIntItems.length >= apiIntItems.length) {
@@ -272,6 +272,7 @@ public class Apk {
     public static void launch(Context context, String packageName) {
         Intent intent = context.getPackageManager().getLaunchIntentForPackage(packageName);
         if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
     }
