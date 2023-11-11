@@ -76,19 +76,19 @@ public class LogFile {
     private Context context;
 
     /**
-     * 日志文件
-     */
-    public LogFile(Context context) {
-        initParams(context,"IoT", "Log", "log");
-    }
-
-    /**
      * 上下文
      *
      * @return
      */
     public Context getContext() {
         return context;
+    }
+
+    /**
+     * 日志文件
+     */
+    public LogFile(Context context) {
+        initParams(context,"IoT", "Log", "log");
     }
 
     /**
