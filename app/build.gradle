@@ -34,5 +34,5 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     api files('libs/bugly-3.4.4.jar')
     api files('libs/mqttv3-1.1.0.jar')
-    api files('libs/service-1.1.1.jar')
+    api files('libs/service-1.1.2.jar')
 }
