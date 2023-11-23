@@ -2,6 +2,7 @@ package androidx.iot.utils;
 
 import android.content.ComponentName;
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -9,8 +10,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * adb shell指令执行
@@ -18,61 +17,28 @@ import java.util.concurrent.Future;
 public class Shell {
 
     private static final String TAG = Shell.class.getSimpleName();
-    /**
-     * 类型 - 重启
-     */
-    public static final int REBOOT = 1;
-    /**
-     * 类型 - 安装
-     */
-    public static final int INSTALL = 2;
-    /**
-     * 类型 - 启动
-     */
-    public static final int LAUNCHER = 3;
-
-    /**
-     * 重启设备
-     *
-     * @param listener 执行监听
-     */
-    public static Future reboot(OnExecuteListener listener) {
-        return execute(REBOOT, new String[]{"reboot"}, listener);
-    }
 
     /**
      * 重启设备
      */
-    public static Future reboot() {
-        return reboot(null);
+    public static Value reboot() {
+        return batch("su", "reboot");
     }
 
     /**
      * 启动APP
+     *
      * @param context 上下文
      * @return
      */
-    public static Future launch(Context context) {
-        return launch(context, null);
-    }
-
-    /**
-     * 启动app
-     *
-     * @param context  上下文
-     * @param listener 监听
-     * @return
-     */
-    public static Future launch(Context context, OnExecuteListener listener) {
+    public static Value launch(Context context) {
         ComponentName componentName = Apk.getLauncherComponentName(context);
-        if (componentName != null) {
-            String packageName = componentName.getPackageName();
-            String className = componentName.getClassName();
-            return launch(packageName, className, listener);
-        } else {
-            Log.e(TAG, "launch failed componentName is null");
+        if (componentName == null) {
+            return new Value(-1, "launch componentName is null.");
         }
-        return null;
+        String packageName = componentName.getPackageName();
+        String className = componentName.getClassName();
+        return launch(packageName, className);
     }
 
     /**
@@ -82,25 +48,11 @@ public class Shell {
      * @param className   类名（包含路径）
      * @return
      */
-    public static Future launch(String packageName, String className) {
-        return launch(packageName,className,null);
-    }
-
-    /**
-     * 启动app
-     *
-     * @param packageName 包名
-     * @param className   类名（包含路径）
-     * @param listener    监听
-     * @return
-     */
-    public static Future launch(String packageName, String className, OnExecuteListener listener) {
+    public static Value launch(String packageName, String className) {
         if (isRooted()) {
-            return execute(LAUNCHER, new String[]{"am start -n " + packageName + "/" + className}, listener);
-        } else {
-            Log.e(TAG, "launch failed not root");
+            return batch("su",  "am start -n " + packageName + "/" + className);
         }
-        return null;
+        return new Value(-1, "launch failed not root");
     }
 
     /**
@@ -123,118 +75,192 @@ public class Shell {
     /**
      * 命令安装（Root权限）
      *
-     * @param context  上下文
-     * @param path     安装路径
-     * @param listener 安装监听
+     * @param context 上下文
+     * @param file    apk文件
+     * @return
      */
-    public static Future install(Context context, String path, OnExecuteListener listener) {
-        int code;
-        String msg;
-        if (new File(path).exists()) {
-            if (isRooted()) {
-                ComponentName componentName = Apk.getLauncherComponentName(context);
-                if (componentName != null) {
-                    String packageName = componentName.getPackageName();
-                    String className = componentName.getClassName();
-                    String installCommand = "pm install -r " + path;
-                    String launchCommand = "am start -n " + packageName + "/" + className;
-                    String exitCommand = "exit";
-                    return execute(INSTALL, new String[]{installCommand, launchCommand, exitCommand}, listener);
-                } else {
-                    code = -3;
-                    msg = "component name not exist";
-                }
-            } else {
-                code = -2;
-                msg = "device is not rooted";
-            }
-        } else {
-            code = -1;
-            msg = "apk is not exist path = " + path;
-        }
-        Log.e(TAG, "code = " + code + ",msg = " + msg);
-        if (listener != null) {
-            listener.onExecuteResult(INSTALL, code, msg);
-        }
-        return null;
+    public static Value install(Context context, File file) {
+        return install(context, file == null ? "" : file.getAbsolutePath());
     }
 
     /**
      * 命令安装（Root权限）
      *
-     * @param path 安装路径
+     * @param context 上下文
+     * @param path    安装路径
      */
-    public static void install(Context context, String path) {
-        install(context, path, null);
+    public static Value install(Context context, String path) {
+        if (TextUtils.isEmpty(path)){
+            return new Value(-1, "install file not exist.");
+        }
+        File file = new File(path);
+        if (!file.exists()) {
+            return new Value(-1, "install file not exist.");
+        }
+        if (!isRooted()) {
+            return new Value(-2, "install device is not root.");
+        }
+        ComponentName componentName = Apk.getLauncherComponentName(context);
+        if (componentName == null) {
+            return new Value(-3, "install componentName is null.");
+        }
+        String packageName = componentName.getPackageName();
+        String className = componentName.getClassName();
+        String install = "pm install -r -i " + packageName + " " + path;
+        String launch = "am start -n " + packageName + "/" + className;
+        return batch("su", install, launch);
     }
 
     /**
-     * 指令执行监听
-     */
-    public interface OnExecuteListener {
-        /**
-         * 执行结果
-         *
-         * @param type 类型{@link #REBOOT}
-         * @param code 0：成功 -100：失败
-         * @param msg  信息
-         */
-        void onExecuteResult(int type, int code, String msg);
-    }
-
-    /**
-     * 执行命令
+     * 读取执行响应
      *
-     * @param type     类型
-     * @param commands 命令数组
-     * @param listener 监听
+     * @param reader
+     * @return
      */
-    public static Future execute(int type, String[] commands, OnExecuteListener listener) {
-        return Executors.newCachedThreadPool().submit(() -> {
-            Process process = null;
-            DataOutputStream os = null;
-            BufferedReader reader = null;
-            try {
-                process = Runtime.getRuntime().exec("su");
-                Log.i(TAG, "su");
-                os = new DataOutputStream(process.getOutputStream());
-                for (String cmd : commands) {
-                    Log.i(TAG, cmd);
-                    os.writeBytes(cmd + "\n");
-                }
-                os.flush();
-                process.waitFor();
-                reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String outputLine;
-                StringBuilder output = new StringBuilder();
-                while ((outputLine = reader.readLine()) != null) {
-                    output.append(outputLine);
-                    output.append("\n");
-                }
-                String result = output.toString();
-                boolean succeed = result.contains("Success");
-                Log.i(TAG, "succeed = " + succeed + ", " + result);
-                if (listener != null) {
-                    listener.onExecuteResult(type, succeed ? 0 : -100, result);
-                }
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            } finally {
+    private static String read(BufferedReader reader) {
+        try {
+            String line;
+            StringBuilder builder = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+            }
+            return builder.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    /**
+     * 直接执行命令
+     *
+     * @param command 命令
+     * @return 0：正常，非0：异常
+     */
+    public static Value exec(String... command) {
+        Value value = new Value(-1, "");
+        BufferedReader reader = null;
+        try {
+            Log.i(TAG, "exec command: " + toString(command));
+            Process process = Runtime.getRuntime().exec(command);
+            DataOutputStream os = new DataOutputStream(process.getOutputStream());
+            os.writeBytes("exit\n");
+            os.flush();
+            process.waitFor();
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String message = read(reader);
+            Log.i(TAG, "exec message: " + message);
+            value.setMessage(message);
+            value.setCode(process.exitValue());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
                 try {
-                    if (os != null) {
-                        os.close();
-                    }
-                    if (reader != null) {
-                        reader.close();
-                    }
+                    reader.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                if (process != null) {
-                    process.destroy();
+                    throw new RuntimeException(e);
                 }
             }
-        });
+        }
+        return value;
+    }
+
+    /**
+     * builder方式执行命令
+     *
+     * @param command 指令
+     * @return
+     */
+    public static Value builder(String... command) {
+        BufferedReader reader = null;
+        Value value = new Value(-1, "");
+        try {
+            Log.i(TAG, "builder command: " + toString(command));
+            ProcessBuilder processBuilder = new ProcessBuilder(command);
+            processBuilder.redirectErrorStream(true);//将错误输出和标准输出合并为一个流
+            Process process = processBuilder.start();
+            int exitCode = process.waitFor();//等待进程执行完成
+            Log.i(TAG, "builder exit code: " + exitCode);
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String message = read(reader);
+            Log.i(TAG, "builder message: " + message);
+            value.setMessage(message);
+            value.setCode(process.exitValue());
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    /**
+     * 批量处理指令
+     *
+     * @param type     类型,超级用户：su; shell脚本：sh
+     * @param commands 指令
+     * @return
+     */
+    public static Value batch(String type, String... commands) {
+        DataOutputStream dos = null;
+        BufferedReader reader = null;
+        Value value = new Value(-1, "");
+        try {
+            StringBuilder builder = new StringBuilder();
+            int length = commands == null ? 0 : commands.length;
+            for (int i = 0; i < length; i++) {
+                builder.append(commands[i]);
+                if (i != length - 1) {
+                    builder.append(" && ");
+                }
+            }
+            ProcessBuilder processBuilder = new ProcessBuilder(type, "-c", builder.toString());
+            Log.i(TAG, "write command: " + type + " -c " + builder);
+            Process process = processBuilder.start();
+
+            int exitCode = process.waitFor();//等待进程执行完成
+            Log.i(TAG, "write exit code: " + exitCode);
+            value.setCode(process.exitValue());
+
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String message = read(reader);
+            Log.i(TAG, "write message: " + message);
+            value.setMessage(message);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (dos != null) {
+                    dos.close();
+                }
+                if (reader != null) {
+                    reader.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    private static String toString(String... command) {
+        StringBuilder builder = new StringBuilder();
+        int length = command == null ? 0 : command.length;
+        for (int i = 0; i < length; i++) {
+            builder.append(command[i]);
+            if (i != length - 1) {
+                builder.append(" ");
+            }
+        }
+        return builder.toString();
     }
 
 }

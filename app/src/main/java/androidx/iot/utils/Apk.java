@@ -1,11 +1,15 @@
 package androidx.iot.utils;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -15,6 +19,10 @@ import android.util.Log;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
 
 /**
  * Apk
@@ -72,13 +80,13 @@ public class Apk {
      * 比较版本号是否需要升级
      *
      * @param context    上下文
-     * @param version 接口版本
+     * @param apiVersion 接口版本
      * @return 是否需要升级
      */
-    public static boolean isNewVersion(Context context, String version) {
+    public static boolean isNewVersion(Context context, String apiVersion) {
         String localVersion = getVersionName(context);
         String localItems[] = localVersion.split("\\.");
-        String apiItems[] = version.split("\\.");
+        String apiItems[] = apiVersion.split("\\.");
         int localIntItems[] = toIntArray(localItems);
         int apiIntItems[] = toIntArray(apiItems);
         if (localIntItems.length >= apiIntItems.length) {
@@ -219,6 +227,70 @@ public class Apk {
     }
 
     /**
+     * Session安装
+     *
+     * @param context 上下文
+     * @param path    路径
+     */
+    public static void sessionInstall(Context context, String path) {
+        File file = new File(path);
+        String apkName = path.substring(path.lastIndexOf(File.separator) + 1, path.lastIndexOf(".apk"));
+        PackageManager packageManager = context.getPackageManager();
+        PackageInstaller packageInstaller = packageManager.getPackageInstaller();
+        PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+        PackageInstaller.Session session = null;
+        OutputStream outputStream = null;
+        FileInputStream inputStream = null;
+        try {
+            //创建Session
+            int sessionId = packageInstaller.createSession(params);
+            //开启Session
+            session = packageInstaller.openSession(sessionId);
+            //获取输出流，用于将apk写入session
+            outputStream = session.openWrite(apkName, 0, -1);
+            inputStream = new FileInputStream(file);
+            byte[] buffer = new byte[2048];
+            int n;
+            //读取apk文件写入session
+            while ((n = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, n);
+            }
+            //写完需要关闭流，否则会抛异常“files still open”
+            inputStream.close();
+            inputStream = null;
+            outputStream.flush();
+            outputStream.close();
+            outputStream = null;
+            //配置安装完成后发起的intent，通常是打开activity（这里我做了修改，修改为广播，intent并未设置目标参数，后面有需求在这里修改补充）
+            Intent intent = new Intent("iot.apk.install.completed");
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+            IntentSender intentSender = pendingIntent.getIntentSender();
+            //提交启动安装
+            session.commit(intentSender);
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (session != null) {
+                session.abandon();
+            }
+        } finally {
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
      * 获取apk包名
      *
      * @param context 上下文
@@ -293,6 +365,31 @@ public class Apk {
             return new ComponentName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name);
         }
         return null;
+    }
+
+    /**
+     * 是否已打开
+     *
+     * @param context     上下文
+     * @param packageName 包名
+     * @return
+     */
+    public static boolean isOpen(Context context, String packageName) {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = activityManager.getRunningAppProcesses();
+        if (runningAppProcesses != null) {
+            for (ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
+                try {
+                    String processName = context.getPackageManager().getApplicationInfo(processInfo.processName, PackageManager.GET_META_DATA).packageName;
+                    if (processName.equalsIgnoreCase(packageName)) {
+                        return true;
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return false;
     }
 
 }
