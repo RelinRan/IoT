@@ -25,12 +25,12 @@ import java.util.concurrent.Future;
 /**
  * U盘三元组信息监听
  */
-public class TriplesReceiver extends BroadcastReceiver {
+public class LicenseReceiver extends BroadcastReceiver {
 
     /**
      * 日志标识
      */
-    private String TAG = TriplesReceiver.class.getSimpleName();
+    private String TAG = LicenseReceiver.class.getSimpleName();
     /**
      * 文件操作线程池
      */
@@ -55,7 +55,6 @@ public class TriplesReceiver extends BroadcastReceiver {
      * @param context
      */
     public void register(Context context) {
-        Log.d(TAG, "register");
         this.context = context;
         triplesMessage = new TriplesMessage();
         IntentFilter filter = new IntentFilter();
@@ -64,10 +63,13 @@ public class TriplesReceiver extends BroadcastReceiver {
         filter.addDataScheme("file");
         context.registerReceiver(this, filter);
         //原先U盘已插入,如果没有注册，进行注册流程.
-        if (!License.with(context).isLicensed()) {
+        boolean isLicensed = License.with(context).isLicensed();
+        Log.d(TAG, "register licensed:" + isLicensed);
+        if (!isLicensed) {
             List<String> paths = Device.getRemovableStorageVolumePath(context);
             for (String path : paths) {
-                readTriples(path);
+                Log.d(TAG, "path:" + path);
+                readLicense(path);
             }
         }
     }
@@ -115,7 +117,7 @@ public class TriplesReceiver extends BroadcastReceiver {
     protected void onMediaMounted(Context context, Intent intent) {
         String path = intent.getData().getPath();
         Log.d(TAG, "USB mounted path = " + path);
-        readTriples(path);
+        readLicense(path);
     }
 
     /**
@@ -134,7 +136,7 @@ public class TriplesReceiver extends BroadcastReceiver {
      *
      * @param path
      */
-    private void readTriples(String path) {
+    private void readLicense(String path) {
         if (service == null) {
             service = Executors.newCachedThreadPool();
         }
@@ -142,7 +144,7 @@ public class TriplesReceiver extends BroadcastReceiver {
             future.cancel(true);
         }
         future = service.submit(() -> {
-            File file = findTriples(new File(path));
+            File file = findLicense(new File(path));
             if (file == null || !file.exists()) {
                 Log.e(TAG, License.with(context).getName() + " file does not exist");
             } else {
@@ -165,17 +167,20 @@ public class TriplesReceiver extends BroadcastReceiver {
      * @param file 路径
      * @return
      */
-    private File findTriples(File file) {
+    private File findLicense(File file) {
         if (file.isDirectory()) {
-            for (File child : file.listFiles()) {
-                if (child.isDirectory()) {
-                    findTriples(child);
-                }
-                String name = child.getName();
-                Log.d(TAG, name);
-                if (name.equals(License.with(context).getName())) {
-                    Log.d(TAG, child.getAbsolutePath());
-                    return child;
+            File[] files = file.listFiles();
+            if (files != null && files.length > 0) {
+                for (File child : files) {
+                    if (child.isDirectory()) {
+                        findLicense(child);
+                    }
+                    String name = child.getName();
+                    Log.d(TAG, name);
+                    if (name.equals(License.with(context).getName())) {
+                        Log.d(TAG, child.getAbsolutePath());
+                        return child;
+                    }
                 }
             }
         }

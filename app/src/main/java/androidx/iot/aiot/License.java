@@ -6,7 +6,7 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.iot.receiver.TriplesReceiver;
+import androidx.iot.receiver.LicenseReceiver;
 import androidx.iot.text.Reader;
 import androidx.iot.text.Writer;
 import androidx.iot.utils.AES;
@@ -63,7 +63,7 @@ public class License {
     /**
      * U盘接收器
      */
-    private TriplesReceiver receiver;
+    private LicenseReceiver receiver;
     /**
      * 三元组对象
      */
@@ -163,7 +163,7 @@ public class License {
      */
     public void register(OnLicenseListener listener) {
         if (receiver == null) {
-            receiver = new TriplesReceiver();
+            receiver = new LicenseReceiver();
             receiver.register(context);
             register = true;
         }
