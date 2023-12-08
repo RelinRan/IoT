@@ -1,5 +1,7 @@
 package androidx.iot.entity;
 
+import android.os.BatteryManager;
+
 public class Battery {
 
     /**
@@ -11,17 +13,25 @@ public class Battery {
      */
     private int scale;
     /**
-     * 被充电状态
+     * 被充电状态<br/>
+     * {@link BatteryManager#BATTERY_STATUS_UNKNOWN}：电池状态未知<br/>
+     * {@link BatteryManager#BATTERY_STATUS_CHARGING}：电池正在充电<br/>
+     * {@link BatteryManager#BATTERY_STATUS_DISCHARGING}：电池正在放电<br/>
+     * {@link BatteryManager#BATTERY_STATUS_NOT_CHARGING}：电池未在充电<br/>
+     * {@link BatteryManager#BATTERY_STATUS_FULL}：电池已充满<br/>
      */
     private int status;
     /**
-     * 被充电状态
+     * 被充电状态<br/>
+     * {@link BatteryManager#BATTERY_PLUGGED_AC}：表示已连接交流电充电器<br/>
+     * {@link BatteryManager#BATTERY_PLUGGED_USB}：表示已连接USB充电<br/>
+     * {@link BatteryManager#BATTERY_PLUGGED_WIRELESS}：表示已连接无线充电器<br/>
      */
     private int plugged;
     /**
      * 温度（单位：0.1°C）
      */
-    private int temperature ;
+    private int temperature;
     /**
      * 电压（单位：mV）
      */
@@ -73,5 +83,18 @@ public class Battery {
 
     public void setVoltage(int voltage) {
         this.voltage = voltage;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Battery{" +
+                "level=" + level +
+                ", scale=" + scale +
+                ", status=" + status +
+                ", plugged=" + plugged +
+                ", temperature=" + temperature +
+                ", voltage=" + voltage +
+                '}';
     }
 }

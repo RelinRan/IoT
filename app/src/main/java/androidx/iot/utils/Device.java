@@ -29,21 +29,6 @@ public class Device {
 
     public static final String TAG = Device.class.getSimpleName();
 
-    /**
-     * 获取电池电量
-     *
-     * @param context
-     * @return
-     */
-    public static int getBatteryLevel(Context context) {
-        BatteryManager batteryManager = (BatteryManager) context.getSystemService(Context.BATTERY_SERVICE);
-        //Android5.0以上
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
-        } else {
-            return 0;
-        }
-    }
 
     /**
      * 设备首次启动时生成的唯一标识符
