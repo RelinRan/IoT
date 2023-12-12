@@ -34,6 +34,10 @@ public enum Topic {
      */
     SUB_PROPERTY("/sys/${productKey}/${deviceName}/thing/event/property/post_reply"),
     /**
+     * 设备设置属性 - 响应
+     */
+    SUB_PROPERTY_SET("/sys/${productKey}/${deviceName}/thing/service/property/set"),
+    /**
      * 设备上报日志
      */
     PUB_LOG("/sys/${productKey}/${deviceName}/thing/log/post"),
