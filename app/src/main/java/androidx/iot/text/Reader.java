@@ -25,15 +25,11 @@ public class Reader {
     public Reader(String path) {
         this.file = new File(path);
         service = Executors.newCachedThreadPool();
-        Log.i(TAG,"path = "+path);
     }
 
     public Reader(File file) {
         this.file = file;
         service = Executors.newCachedThreadPool();
-        if (file!=null){
-            Log.i(TAG,"file = "+file.getAbsolutePath());
-        }
     }
 
     /**

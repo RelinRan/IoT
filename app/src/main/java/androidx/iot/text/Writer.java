@@ -20,12 +20,10 @@ public class Writer {
 
     public Writer(String path) {
         this.file = new File(path);
-        System.out.println("path = " + path);
     }
 
     public Writer(File file) {
         this.file = file;
-        System.out.println("file = " + file.getAbsolutePath());
     }
 
     /**

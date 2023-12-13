@@ -184,6 +184,20 @@ public class LogFile {
     }
 
     /**
+     * 清空日志文件
+     */
+    public void clear() {
+        File folder = getFolder();
+        File[] list = folder.listFiles();
+        int size = list == null ? 0 : list.length;
+        for (int i = 0; i < size; i++) {
+            if (list[i].exists()) {
+                list[i].delete();
+            }
+        }
+    }
+
+    /**
      * 文件前缀名
      *
      * @param prefix
