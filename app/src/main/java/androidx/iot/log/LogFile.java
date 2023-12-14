@@ -1,7 +1,5 @@
 package androidx.iot.log;
 
-import android.content.Context;
-import android.os.Build;
 import android.os.Environment;
 
 import androidx.iot.text.OnReadListener;
@@ -71,24 +69,15 @@ public class LogFile {
      */
     private int period = 8;
     /**
-     * 上下文
+     * 日期是否可用
      */
-    private Context context;
-
-    /**
-     * 上下文
-     *
-     * @return
-     */
-    public Context getContext() {
-        return context;
-    }
+    private boolean supportScheduled = true;
 
     /**
      * 日志文件
      */
-    public LogFile(Context context) {
-        initParams(context,"IoT", "Log", "log");
+    public LogFile() {
+        initialize("IoT", "Log", "log");
     }
 
     /**
@@ -98,8 +87,8 @@ public class LogFile {
      * @param dir     文件夹
      * @param prefix  文件前缀
      */
-    public LogFile(Context context,String project, String dir, String prefix) {
-        initParams(context,project, dir, prefix);
+    public LogFile(String project, String dir, String prefix) {
+        initialize(project, dir, prefix);
     }
 
     /**
@@ -109,14 +98,9 @@ public class LogFile {
      * @param dir     文件夹
      * @param prefix  文件前缀
      */
-    private void initParams(Context context,String project, String dir, String prefix) {
-        this.context = context;
+    protected void initialize(String project, String dir, String prefix) {
         dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            setRoot(context.getExternalFilesDir(null));
-        } else {
-            setRoot(Environment.getExternalStorageDirectory());
-        }
+        setRoot(Environment.getExternalStorageDirectory());
         setFolder(project, dir);
         setPrefix(prefix);
         setSuffix(".txt");
@@ -154,6 +138,24 @@ public class LogFile {
     }
 
     /**
+     * 设置是否支持定时任务
+     *
+     * @param supportScheduled
+     */
+    public void setSupportScheduled(boolean supportScheduled) {
+        this.supportScheduled = supportScheduled;
+    }
+
+    /**
+     * 是否支持定时任务
+     *
+     * @return
+     */
+    public boolean isSupportScheduled() {
+        return supportScheduled;
+    }
+
+    /**
      * 设置文件夹
      *
      * @param project 项目名称
@@ -170,10 +172,8 @@ public class LogFile {
     public File getFolder() {
         StringBuilder builder = new StringBuilder();
         builder.append(root);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            builder.append(File.separator);
-            builder.append(project);
-        }
+        builder.append(File.separator);
+        builder.append(project);
         builder.append(File.separator);
         builder.append(dir);
         File folder = new File(builder.toString());
@@ -221,9 +221,13 @@ public class LogFile {
      * @return
      */
     public String getFilename() {
-        String data = getFormatDate("yyyy-MM-dd");
         StringBuilder builder = new StringBuilder();
-        builder.append(prefix).append(data).append(suffix);
+        builder.append(prefix);
+        if (isSupportScheduled()) {
+            String data = getFormatDate("yyyy-MM-dd");
+            builder.append(data);
+        }
+        builder.append(suffix);
         return builder.toString();
     }
 
@@ -294,8 +298,10 @@ public class LogFile {
      */
     public void write(String content, boolean append) {
         StringBuilder builder = new StringBuilder();
-        builder.append(getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
-        builder.append("  ");
+        if (isSupportScheduled()) {
+            builder.append(getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
+            builder.append("    ");
+        }
         builder.append(content);
         builder.append("\n");
         if (writer == null) {
@@ -333,6 +339,10 @@ public class LogFile {
      */
     public void startScheduled() {
         if (scheduled != null) {
+            return;
+        }
+        //不支持定时任务检查
+        if (supportScheduled == false) {
             return;
         }
         scheduled = new LogScheduled(getFolder(), prefix, suffix, exp, timeUnit);

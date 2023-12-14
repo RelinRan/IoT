@@ -3,7 +3,6 @@ package androidx.iot.utils;
 import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.BatteryManager;
 import android.os.Build;
 import android.os.storage.StorageManager;
 import android.provider.Settings;
@@ -28,7 +27,6 @@ import java.util.List;
 public class Device {
 
     public static final String TAG = Device.class.getSimpleName();
-
 
     /**
      * 设备首次启动时生成的唯一标识符
@@ -71,6 +69,9 @@ public class Device {
         String macAddress = null;
         if (macAddress == null) {
             try {
+                // /sys/class/net/wlan0/address
+                // /sys/class/net/eth0/address
+                // /sys/class/net/eth1/address
                 BufferedReader reader = new BufferedReader(new FileReader("/sys/class/net/eth0/address"));
                 macAddress = reader.readLine();
                 reader.close();
@@ -83,21 +84,44 @@ public class Device {
     }
 
     /**
+     * 获取以太网MAC地址
+     *
+     * @return
+     */
+    public static String getWlanMac() {
+        String macAddress = null;
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader("/sys/class/net/wlan0/address"));
+            macAddress = reader.readLine();
+            reader.close();
+            return macAddress;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return macAddress;
+    }
+
+    /**
      * 获取设备唯一ID
      *
      * @param context 上下文
      * @return
      */
     public static String getUniqueId(Context context) {
+        String eth0Mac = getEth0Mac();
+        if (eth0Mac != null && !eth0Mac.equals("00:00:00:00:00:00")) {
+            Log.i(TAG, "eth0Mac = " + eth0Mac);
+            return eth0Mac.replace(":", "").toUpperCase();
+        }
+        String wlanMac = getWlanMac();
+        if (wlanMac != null && !wlanMac.equals("00:00:00:00:00:00")) {
+            Log.i(TAG, "wlanMac = " + eth0Mac);
+            return wlanMac.replace(":", "").toUpperCase();
+        }
         String imei = getIMEI(context);
         if (imei != null) {
             Log.i(TAG, "imei = " + imei);
             return imei;
-        }
-        String mac = getEth0Mac();
-        if (mac != null) {
-            Log.i(TAG, "mac = " + mac);
-            return mac.replace(":", "").toUpperCase();
         }
         String androidId = getAndroidId(context);
         Log.i(TAG, "androidId = " + androidId);
