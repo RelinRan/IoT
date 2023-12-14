@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Environment;
 
 import com.tencent.bugly.crashreport.CrashReport;
 
@@ -17,6 +18,7 @@ import java.util.Date;
 public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler {
 
     public final String TAG = CrashLog.class.getSimpleName();
+    private Context context;
     /**
      * 异常日志
      */
@@ -115,7 +117,9 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * @param context
      */
     private CrashLog(Context context) {
-        super(context, "IoT", "Exception", "exp");
+        this.context = context;
+        setFolder("IoT", "Exception");
+        setPrefix("exp");
         Thread.setDefaultUncaughtExceptionHandler(this);
     }
 
@@ -127,8 +131,7 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * @return
      */
     private CrashLog(Context context, String project) {
-        super(context, project, "Exception", "exp");
-        Thread.setDefaultUncaughtExceptionHandler(this);
+        this(context, project, "Exception", "exp");
     }
 
     /**
@@ -140,8 +143,7 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * @return
      */
     private CrashLog(Context context, String project, String dir) {
-        super(context, project, dir, "exp");
-        Thread.setDefaultUncaughtExceptionHandler(this);
+        this(context, project, dir, "exp");
     }
 
     /**
@@ -154,8 +156,13 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * @return
      */
     private CrashLog(Context context, String project, String dir, String prefix) {
-        super(context,project, dir, prefix);
+        super(project, dir, prefix);
+        this.context = context;
         Thread.setDefaultUncaughtExceptionHandler(this);
+    }
+
+    public Context getContext() {
+        return context;
     }
 
     /**
@@ -182,7 +189,11 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
         }
         throwable.printStackTrace();
         String content = buildApplicationDevice(false) + buildRuntimeException(false, throwable);
-        write(content, true);
+        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+            write(content, true);
+        } else {
+            new RuntimeException("sdcard is not mounted").printStackTrace();
+        }
     }
 
     /**
