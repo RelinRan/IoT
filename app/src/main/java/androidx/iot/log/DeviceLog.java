@@ -23,9 +23,7 @@ public class DeviceLog extends LogFile {
     protected void initialize(String project, String dir, String prefix) {
         super.initialize(project, dir, prefix);
         format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        setFolder("IoT", "Device");
         setSupportScheduled(false);
-        setPrefix("device_info");
     }
 
     /**
