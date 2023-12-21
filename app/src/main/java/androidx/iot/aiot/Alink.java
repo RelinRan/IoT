@@ -293,9 +293,11 @@ public class Alink {
         String url = response.getData().getUrl();
         boolean isUpgrade = Apk.isNewVersion(context, version);
         if (isUpgrade) {
-            if (otaDialog == null) {
-                otaDialog = new OTADialog(context);
+            if (otaDialog != null) {
+                otaDialog.dismiss();
+                otaDialog = null;
             }
+            otaDialog = new OTADialog(context);
             if (!otaDialog.isShowing()) {
                 otaDialog.setSource(url, filename);
                 otaDialog.show();

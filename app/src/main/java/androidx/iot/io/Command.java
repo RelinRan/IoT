@@ -259,6 +259,7 @@ public class Command implements Runnable {
      * @param file              文件
      */
     public void write(InputStream is, long contentLength, long downloadedLength, File file) {
+        Log.i(TAG, "contentLength: " + contentLength+",downloadedLength:"+downloadedLength);
         RandomAccessFile access = null;
         try {
             if (downloadedLength == 0) {
@@ -290,13 +291,19 @@ public class Command implements Runnable {
             byte[] buffer = new byte[2048];
             while ((length = is.read(buffer)) != -1) {
                 if (isCancel() || isPause()) {
+                    Log.i(TAG, "isCancel:"+isCancel()+",isPause:"+isPause());
                     break;
                 }
                 access.write(buffer, 0, length);
                 progress += length;
                 messenger.send(totalSize, progress + downloadedLength);
             }
-            messenger.send(file);
+            Log.i(TAG, "length:"+length);
+            if (isCancel()||isPause()){
+                Log.i(TAG, "cancel:"+isCancel()+",pause:"+isPause());
+            }else{
+                messenger.send(file);
+            }
             Log.i(TAG, "write end file.");
         } catch (Exception e) {
             e.printStackTrace();

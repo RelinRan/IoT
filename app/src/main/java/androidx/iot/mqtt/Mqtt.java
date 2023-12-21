@@ -256,10 +256,10 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
 
     @Override
     public long addMessageListener(OnMessageListener listener) {
-        long mid = System.currentTimeMillis();
         if (messageHashMap == null) {
             messageHashMap = new ConcurrentHashMap<>();
         }
+        long mid = System.currentTimeMillis() + messageHashMap.size() + 1;
         messageHashMap.put(mid, listener);
         return mid;
     }

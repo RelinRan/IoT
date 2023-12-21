@@ -224,7 +224,7 @@ public class LicenseReceiver extends BroadcastReceiver {
         if (triplesHashMap == null) {
             triplesHashMap = new ConcurrentHashMap<>();
         }
-        long tid = System.currentTimeMillis();
+        long tid = System.currentTimeMillis() + triplesHashMap.size() + 1;
         triplesHashMap.put(tid, onTriplesListener);
         return tid;
     }
