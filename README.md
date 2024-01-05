@@ -1,6 +1,17 @@
-#### IoT
+#### MQTT
 
-物联网SDK,支持阿里物联网平台、MQTT-3.1.1、Service-1.1.1高版本适配.
+Android MQTT连接,重新编译Service-1.1.1兼容Android高版本服务   
+Paho Android Service-1.1.1      
+Paho Client Mqtt3-1.1.0
+
+#### 资源
+
+|名字|资源|
+|-|-|
+|AAR|[下载](https://github.com/RelinRan/MQTT/tree/main/aar)|
+|GitHub |[查看](https://github.com/RelinRan/MQTT)|
+|Gitee|[查看](https://gitee.com/relin/MQTT)|
+
 
 #### Maven
 
