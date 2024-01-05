@@ -7,7 +7,7 @@ package androidx.iot.mqtt;
  * 目前支持Log.i() Log.w()  Log.e()  Log.d()<br/>
  * 自定义Log.format,采用格式化打印日志。
  */
-public class Log {
+public class Console {
 
     /**
      * 最大一次打印长度

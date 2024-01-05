@@ -45,14 +45,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="59dp"
+        android:layout_marginBottom="82dp"
         android:text="@string/iot_upgrade_desc"
         android:textColor="@color/iot_upgrade_font_color"
         android:textSize="19sp" />
 
     <View
+        android:id="@+id/divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="82dp"
         android:background="@color/iot_upgrade_divider_color" />
 
     <TextView

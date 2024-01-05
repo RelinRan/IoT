@@ -77,7 +77,7 @@ public class Alink {
      * @return
      */
     public boolean isTopic(Topic topic, String value) {
-        return isTopic(topic, value, null, null);
+        return topic.equals(value);
     }
 
     /**
@@ -90,7 +90,7 @@ public class Alink {
      * @return
      */
     public boolean isTopic(Topic topic, String value, String functionBlockId, String identifier) {
-        return topic.equals(value, license.getProductKey(), license.getDeviceName(), functionBlockId, identifier);
+        return topic.equals(value, functionBlockId, identifier);
     }
 
     /**
@@ -99,7 +99,7 @@ public class Alink {
      * @param topic 主题
      */
     public void subscribe(String topic) {
-        if (!mqtt.isConnected()) {
+        if (mqtt == null || !mqtt.isConnected()) {
             System.err.println("MQTT did not connect successfully");
             return;
         }
@@ -143,7 +143,7 @@ public class Alink {
      * @param payload 内容
      */
     public void publish(Topic topic, String payload) {
-        if (!mqtt.isConnected()) {
+        if (mqtt == null || !mqtt.isConnected()) {
             System.err.println("MQTT did not connect successfully");
             return;
         }
@@ -280,9 +280,10 @@ public class Alink {
      * 显示升级dialog
      *
      * @param context 页面
+     * @param cancel  是否显示取消按钮
      * @param message MQTT消息
      */
-    public void showOTADialog(Context context, MqttMessage message) {
+    public void showOTADialog(Context context, boolean cancel, MqttMessage message) {
         String payload = new String(message.getPayload());
         ResponseBody response = new ResponseBody().fromJson(payload);
         if (response.getData() == null) {
@@ -298,6 +299,8 @@ public class Alink {
                 otaDialog = null;
             }
             otaDialog = new OTADialog(context);
+            otaDialog.setAliot(true);
+            otaDialog.setCancel(cancel);
             if (!otaDialog.isShowing()) {
                 otaDialog.setSource(url, filename);
                 otaDialog.show();
@@ -579,7 +582,7 @@ public class Alink {
     /**
      * 释放资源
      */
-    public void release() {
+    public void destroy() {
         if (otaDialog != null) {
             otaDialog.dismiss();
             otaDialog = null;

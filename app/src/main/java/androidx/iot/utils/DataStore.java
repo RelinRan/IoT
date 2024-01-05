@@ -31,7 +31,7 @@ public class DataStore {
             return null;
         }
         String PACKAGE_NAME = context.getApplicationContext().getPackageName().replace(".", "_").toUpperCase();
-        String name = PACKAGE_NAME + getVersionCode(context) + SHARE_PREFERENCE_NAME;
+        String name = PACKAGE_NAME + SHARE_PREFERENCE_NAME;
         return context.getSharedPreferences(name, Context.MODE_PRIVATE);
     }
 

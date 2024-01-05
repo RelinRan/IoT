@@ -3,9 +3,10 @@ package androidx.iot.aiot;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.iot.mqtt.Imqtt;
 import androidx.iot.mqtt.Mqtt;
-import androidx.iot.mqtt.MqttOption;
+import androidx.iot.mqtt.MqttOptions;
+
+import org.eclipse.paho.client.mqttv3.IMqttToken;
 
 /**
  * 阿里物联网 - Link客户端（MQTT）
@@ -18,40 +19,97 @@ public class Link extends Mqtt {
      */
     private static Link link;
     /**
+     * 授权文件
+     */
+    private License license;
+    /**
      * 阿里物联网服务api
      */
-    private Alink api;
+    private Alink alink;
 
-    private Link() {
+    private Link(Context context, String url, License license) {
+        setLicense(license);
+        LicenseType type = license.getType();
+        Options options;
+        if (type == LicenseType.PRE_REGISTRATION) {
+            options = new Options().connect(license.getProductKey(), license.getDeviceName(), license.getDeviceSecret());
+        } else if (type == LicenseType.NO_PRE_REGISTRATION) {
+            options = new Options().connwl(license.getClientId(), license.getProductKey(), license.getDeviceName(), license.getDeviceToken());
+        } else {
+            options = new Options().connect(license.getProductKey(), license.getDeviceName(), license.getDeviceSecret());
+        }
+        if (options != null) {
+            if (isDebug()) {
+                Log.d(TAG, license.toJSONString());
+            }
+            String clientId = options.getClientId();
+            String userName = options.getUsername();
+            String passWord = options.getPassword();
+            setMqttAndroidClientOptions(context, new MqttOptions(url, clientId, userName, passWord));
+        } else {
+            Log.e(TAG, "initialize failed license parameter incorrect");
+        }
     }
 
     /**
-     * 设置物联网接口对象
+     * 设置授权
      *
-     * @param api
+     * @param license
      */
-    public void api(Alink api) {
-        this.api = api;
+    public void setLicense(License license) {
+        this.license = license;
     }
 
     /**
-     * 获取物联网接口对象
+     * 获取授权文件
      *
      * @return
      */
-    public Alink api() {
-        return api;
+    public License getLicense() {
+        return license;
+    }
+
+    /**
+     * 获取阿里物联网MQTT
+     *
+     * @return
+     */
+    public static Link acquire() {
+        if (link==null){
+            Log.e(TAG, "Link has not been initialized");
+        }
+        return link;
+    }
+
+    /**
+     * 接口API
+     *
+     * @return
+     */
+    public static Alink api() {
+        return link.alink;
+    }
+
+    /**
+     * 物联网api
+     *
+     * @return
+     */
+    public Alink getAlink() {
+        return alink;
     }
 
     /**
      * 初始化，默认读取三元组信息，服务器区域：cn-shanghai，端口：1883
      *
      * @param context 上下文
+     * @param type    授权类型
      * @return
      */
-    public static Link initialize(Context context) {
-        License license = License.with(context).load();
-        String url = URL(license.getProductKey(), "cn-shanghai", 1883);
+    public static Link initialize(Context context, LicenseType type) {
+        License license = License.acquire();
+        license.setType(type);
+        String url = ServerURL.value(false, license.getProductKey(), "cn-shanghai", 1883);
         return initialize(context, url, license);
     }
 
@@ -63,7 +121,7 @@ public class Link extends Mqtt {
      * @return
      */
     public static Link initialize(Context context, License license) {
-        String url = URL(license.getProductKey(), "cn-shanghai", 1883);
+        String url = ServerURL.value(false, license.getProductKey(), "cn-shanghai", 1883);
         return initialize(context, url, license);
     }
 
@@ -72,90 +130,35 @@ public class Link extends Mqtt {
      *
      * @param context 上下文
      * @param url     服务端地址，例如：tcp://a1mFnrTMwKg.iot-as-mqtt.cn-shanghai.aliyuncs.com:1883
-     * @param license 三元组许可
+     * @param license 授权许可
      * @return
      */
     public static Link initialize(Context context, String url, License license) {
         if (link == null) {
             synchronized (Link.class) {
                 if (link == null) {
-                    link = new Link();
+                    link = new Link(context, url, license);
                 }
             }
-        }
-        if (license != null) {
-            String productKey = license.getProductKey();
-            String deviceName = license.getDeviceName();
-            String deviceSecret = license.getDeviceSecret();
-            if (productKey != null && deviceName != null && deviceSecret != null) {
-                if (link.api() != null) {
-                    link.api().setLicense(license);
-                } else {
-                    link.api(new Alink(link, license));
-                }
-                LinkOption options = new LinkOption().getLinkOption(productKey, deviceName, deviceSecret);
-                if (options == null) {
-                    Log.e(TAG, "device info error");
-                } else {
-                    if (link.isDebug()) {
-                        Log.d(TAG, license.toJSONString());
-                    }
-                    String clientId = options.getClientId();
-                    String userName = options.getUsername();
-                    String passWord = options.getPassword();
-                    link.initializeClient(context, new MqttOption(url, clientId, userName, passWord));
-                    Log.i(TAG, "initialize successful");
-                }
-            } else {
-                Log.e(TAG, "initialize failed license parameter incorrect");
-            }
-        } else {
-            Log.e(TAG, "initialize failed license is null");
         }
         return link;
     }
 
-    /**
-     * 组合HOST
-     *
-     * @param productKey 产品key
-     * @param area       服务器区域（例如：cn-shanghai）
-     * @param port       端口（例如：443）
-     * @return
-     */
-    public static String URL(String productKey, String area, int port) {
-        StringBuffer sb = new StringBuffer("tcp://");
-        sb.append(productKey);
-        sb.append(".iot-as-mqtt.");
-        sb.append(area);
-        sb.append(".aliyuncs.com:");
-        sb.append(port);
-        return sb.toString();
-    }
-
-    /**
-     * 获取阿里物联网MQTT
-     *
-     * @return
-     */
-    public static Link mqtt() {
-        return link;
+    @Override
+    public void onSuccess(IMqttToken token) {
+        alink = new Alink(this, license);
+        alink.subscribeOTA();
+        super.onSuccess(token);
     }
 
     @Override
-    public Imqtt reset() {
-        if (link != null) {
-            link = null;
+    public void destroy() {
+        super.destroy();
+        if (alink != null) {
+            alink.destroy();
         }
-        return super.reset();
-    }
-
-    @Override
-    public void disconnect() {
-        super.disconnect();
-        if (api != null) {
-            api.release();
-        }
+        alink = null;
+        link = null;
     }
 
 }

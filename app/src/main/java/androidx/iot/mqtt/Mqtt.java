@@ -1,6 +1,7 @@
 package androidx.iot.mqtt;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -22,15 +23,11 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     /**
      * MQTT客户端
      */
-    private MqttAndroidClient client;
+    private MqttAndroidClient mqttAndroidClient;
     /**
      * MQTT参数
      */
     private MqttConnectOptions mqttConnectOptions;
-    /**
-     * MQTT初始化参数
-     */
-    private MqttOption mqttOption;
     /**
      * 是否调试
      */
@@ -38,11 +35,11 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     /**
      * MQTT
      */
-    private static Mqtt mqtt;
+    private static Mqtt instance;
 
 
     public Mqtt() {
-        android.util.Log.i(TAG, "instantiation mqtt");
+        Log.i(TAG, "instantiation mqtt");
     }
 
     /**
@@ -59,8 +56,9 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
      *
      * @param debug
      */
-    public void setDebug(boolean debug) {
+    public Mqtt debug(boolean debug) {
         this.debug = debug;
+        return this;
     }
 
     /**
@@ -70,16 +68,16 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
      * @param options 参数
      * @return
      */
-    public static Mqtt initialize(Context context, MqttOption options) {
-        if (mqtt == null) {
+    public static Mqtt initialize(Context context, MqttOptions options) {
+        if (instance == null) {
             synchronized (Mqtt.class) {
-                if (mqtt == null) {
-                    mqtt = new Mqtt();
+                if (instance == null) {
+                    instance = new Mqtt();
                 }
             }
         }
-        mqtt.initializeClient(context, options);
-        return mqtt;
+        instance.setMqttAndroidClientOptions(context, options);
+        return instance;
     }
 
     /**
@@ -87,32 +85,73 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
      *
      * @return
      */
-    public static Mqtt client() {
-        return mqtt;
+    public static Mqtt acquire() {
+        return instance;
     }
 
     /**
-     * 初始化客户端
+     * 设置连接参数
      *
      * @param context 上下文
      * @param options 参数
      */
-    protected void initializeClient(Context context, MqttOption options) {
-        this.mqttOption = options;
-        client = new MqttAndroidClient(context.getApplicationContext(), options.getHost(), options.getClientId());
-        client.setCallback(this);
+    public void setMqttAndroidClientOptions(Context context, MqttOptions options) {
+        mqttAndroidClient = new MqttAndroidClient(context.getApplicationContext(), options.getHost(), options.getClientId());
+        mqttAndroidClient.setCallback(this);
         mqttConnectOptions = new MqttConnectOptions();
         mqttConnectOptions.setUserName(options.getUserName());
         mqttConnectOptions.setPassword(options.getPassword().toCharArray());
-        print("service url", options.getHost());
+        Log.i(TAG, "service url " + options.getHost());
+        if (debug) {
+            Log.i(TAG, options.getClientId()+" "+options.getUserName()+" "+options.getPassword());
+        }
     }
 
+    /**
+     * 设置Android Mqtt客户端
+     *
+     * @param mqttAndroidClient
+     */
+    public void setMqttAndroidClient(MqttAndroidClient mqttAndroidClient) {
+        if (mqttAndroidClient != null) {
+            mqttAndroidClient.setCallback(this);
+        }
+        this.mqttAndroidClient = mqttAndroidClient;
+    }
+
+    /**
+     * Android Mqtt客户端
+     *
+     * @return
+     */
+    public MqttAndroidClient getMqttAndroidClient() {
+        return mqttAndroidClient;
+    }
+
+
+    /**
+     * 设置Mqtt参数
+     *
+     * @param mqttConnectOptions
+     */
+    public void setMqttConnectOptions(MqttConnectOptions mqttConnectOptions) {
+        this.mqttConnectOptions = mqttConnectOptions;
+    }
+
+    /**
+     * Mqtt连接参数
+     *
+     * @return
+     */
+    public MqttConnectOptions getMqttConnectOptions() {
+        return mqttConnectOptions;
+    }
 
     @Override
     public Imqtt connect() {
         try {
-            if (client != null) {
-                client.connect(mqttConnectOptions, null, this);
+            if (mqttAndroidClient != null) {
+                mqttAndroidClient.connect(mqttConnectOptions, null, this);
             }
         } catch (MqttException e) {
             e.printStackTrace();
@@ -123,8 +162,9 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     @Override
     public void disconnect() {
         try {
-            if (client != null) {
-                client.disconnect();
+            if (mqttAndroidClient != null && mqttAndroidClient.isConnected()) {
+                mqttAndroidClient.unregisterResources();
+                mqttAndroidClient.disconnect(200);
             }
         } catch (MqttException e) {
             e.printStackTrace();
@@ -132,20 +172,34 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     }
 
     @Override
+    public void destroy() {
+        disconnect();
+        if (messageHashMap != null) {
+            messageHashMap.clear();
+            connectHashMap = null;
+        }
+        if (connectHashMap != null) {
+            connectHashMap.clear();
+            connectHashMap = null;
+        }
+        instance = null;
+    }
+
+    @Override
     public boolean isConnected() {
-        if (client == null) {
+        if (mqttAndroidClient == null) {
             return false;
         }
-        return client.isConnected();
+        return mqttAndroidClient.isConnected();
     }
 
     //*******************状态**********************
     @Override
     public void connectionLost(Throwable cause) {
-        android.util.Log.i(TAG, "connection lost");
+        Log.i(TAG, "connection lost");
         try {
-            if (client != null) {
-                client.connect();
+            if (mqttAndroidClient != null) {
+                mqttAndroidClient.connect();
             }
         } catch (MqttException e) {
             e.printStackTrace();
@@ -161,7 +215,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     public void messageArrived(String topic, MqttMessage message) {
         String payload = new String(message.getPayload());
         if (debug) {
-            print("received", topic, payload);
+            Log.i(TAG, "received " + topic + " " + payload);
         }
         if (messageHashMap != null) {
             for (Long key : messageHashMap.keySet()) {
@@ -183,7 +237,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
 
     @Override
     public void onSuccess(IMqttToken token) {
-        android.util.Log.i(TAG, "connection successful");
+        Log.i(TAG, "connection successful");
         if (connectHashMap != null) {
             for (Long key : connectHashMap.keySet()) {
                 connectHashMap.get(key).onConnectionSuccessful(token);
@@ -193,7 +247,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
 
     @Override
     public void onFailure(IMqttToken token, Throwable exception) {
-        android.util.Log.i(TAG, "connection failed ");
+        Log.i(TAG, "connection failed");
         if (connectHashMap != null) {
             for (Long key : connectHashMap.keySet()) {
                 connectHashMap.get(key).onConnectionFailed(token, exception);
@@ -206,18 +260,18 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     @Override
     public Imqtt publish(String topic, String payload, IMqttActionListener listener) {
         try {
-            if (client != null) {
-                if (client.isConnected() == false) {
-                    client.connect();
+            if (mqttAndroidClient != null) {
+                if (mqttAndroidClient.isConnected() == false) {
+                    mqttAndroidClient.connect();
                 }
                 MqttMessage message = new MqttMessage();
                 int id = (int) System.currentTimeMillis() + 200;
                 message.setPayload(payload.getBytes());
                 message.setId(id);
                 message.setQos(0);
-                client.publish(topic, message, null, listener);
+                mqttAndroidClient.publish(topic, message, null, listener);
                 if (debug) {
-                    print("publish id:" + id, topic, payload);
+                    Log.i(TAG, "publish id:" + id + " " + topic + " " + payload);
                 }
             }
         } catch (MqttException e) {
@@ -235,9 +289,9 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     public Imqtt subscribe(String topic, IMqttActionListener listener) {
         try {
             if (debug) {
-                print("subscribe", topic);
+                Log.i(TAG, "subscribe " + topic);
             }
-            client.subscribe(topic, 0, null, listener);
+            mqttAndroidClient.subscribe(topic, 0, null, listener);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -271,10 +325,10 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
 
     @Override
     public long addConnectListener(OnConnectListener listener) {
-        long cid = System.currentTimeMillis();
         if (connectHashMap == null) {
             connectHashMap = new ConcurrentHashMap<>();
         }
+        long cid = System.currentTimeMillis() + connectHashMap.size() + 1;
         connectHashMap.put(cid, listener);
         return cid;
     }
@@ -301,32 +355,6 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
             connectHashMap.clear();
         }
         return this;
-    }
-
-    @Override
-    public Imqtt reset() {
-        if (mqtt != null) {
-            mqtt = null;
-            client = null;
-        }
-        return this;
-    }
-
-    /**
-     * 打印日志
-     *
-     * @param contents
-     */
-    public void print(String... contents) {
-        int length = contents.length;
-        if (length == 0) {
-            return;
-        }
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            builder.append(contents[i]).append(" ");
-        }
-        Log.i(TAG, builder.toString());
     }
 
 }

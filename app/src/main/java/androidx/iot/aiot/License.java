@@ -1,8 +1,6 @@
 package androidx.iot.aiot;
 
 import android.content.Context;
-import android.os.Build;
-import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -11,6 +9,7 @@ import androidx.iot.text.Reader;
 import androidx.iot.text.Writer;
 import androidx.iot.utils.AES;
 import androidx.iot.utils.Device;
+import androidx.iot.utils.External;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,7 +18,7 @@ import org.json.JSONObject;
 import java.io.File;
 
 /**
- * 阿里物联网 - 三元组信息
+ * 阿里物联网 - 授权认证信息
  */
 public class License {
 
@@ -37,6 +36,14 @@ public class License {
      */
     private String name;
     /**
+     * 字段名 - clientId(一型一密免预注册认证方式)
+     */
+    private String clientIdField = "clientId";
+    /**
+     * 字段名 - deviceToken(一型一密免预注册认证方式)
+     */
+    private String deviceTokenField = "deviceToken";
+    /**
      * 字段名 - deviceName
      */
     private String deviceNameField = "deviceName";
@@ -48,6 +55,14 @@ public class License {
      * 字段名 - deviceSecret
      */
     private String deviceSecretField = "deviceSecret";
+    /**
+     * 客户端id(一型一密免预注册认证方式)
+     */
+    private String clientId;
+    /**
+     * 设备令牌(一型一密免预注册认证方式)
+     */
+    private String deviceToken;
     /**
      * 设备名称
      */
@@ -76,15 +91,10 @@ public class License {
      * 上下文
      */
     private Context context;
-
     /**
-     * 设置上下文
-     *
-     * @param context
+     * 授权类型
      */
-    public void setContext(Context context) {
-        this.context = context;
-    }
+    private LicenseType type;
 
     /**
      * 获取上下文
@@ -100,28 +110,29 @@ public class License {
      *
      * @return
      */
-    public static License with(Context context) {
+    public static License acquire() {
         if (license == null) {
             new RuntimeException("License not initialized yet.").printStackTrace();
             return null;
         }
-        license.setContext(context);
         return license;
     }
 
     /**
      * 初始化
      *
+     * @param type    授权类型
+     * @param context 上下文
      * @param project 项目名称
-     * @param dir     三元组文件夹
-     * @param name    三元组文件
+     * @param dir     文件夹
+     * @param name    文件名称
      * @return
      */
-    public static License initialize(String project, String dir, String name) {
+    public static License initialize(LicenseType type, Context context, String project, String dir, String name) {
         if (license == null) {
             synchronized (License.class) {
                 if (license == null) {
-                    license = new License(project, dir, name);
+                    license = new License(type, context, project, dir, name);
                 }
             }
         }
@@ -129,21 +140,42 @@ public class License {
     }
 
     /**
+     * 获取授权类型
+     * @return
+     */
+    public LicenseType getType() {
+        return type;
+    }
+
+    /**
+     * 设置授权类型
+     * @param type
+     */
+    public void setType(LicenseType type) {
+        this.type = type;
+    }
+
+    /**
      * 构造函数
      *
+     * @param type    授权类型
+     * @param context 上下文
      * @param project 项目名称
      * @param dir     三元组文件夹
      * @param name    三元组文件
      */
-    private License(String project, String dir, String name) {
+    private License(LicenseType type, Context context, String project, String dir, String name) {
+        this.context = context;
+        this.type = type;
         this.project = project;
         this.dir = dir;
         this.name = name;
+        load();
         Log.i(TAG, "initialize project = " + project + ",dir = " + dir + ",name = " + name);
     }
 
     /**
-     * 三元组文件内容字段名称
+     * 文件内容字段名称
      *
      * @param deviceName   DEVICE_NAME - 字段
      * @param productKey   PRODUCT_KEY - 字段
@@ -154,6 +186,40 @@ public class License {
         productKeyField = productKey;
         deviceSecretField = deviceSecret;
         Log.d(TAG, "set fields deviceName = " + deviceName + ",productKey = " + productKey + ",deviceSecret = " + deviceSecret);
+    }
+
+    /**
+     * 文件内容字段名称
+     *
+     * @param clientId    clientId - 字段
+     * @param deviceToken deviceToken - 字段
+     * @param deviceName  deviceName - 字段
+     * @param productKey  productKey - 字段
+     */
+    public void setFields(String clientId, String deviceName, String productKey, String deviceToken) {
+        clientIdField = clientId;
+        deviceNameField = deviceName;
+        productKeyField = productKey;
+        deviceTokenField = deviceToken;
+        Log.d(TAG, "set fields clientId = " + clientId + ",deviceToken = " + deviceToken + ",deviceName = " + deviceName + ",productKey = " + productKey);
+    }
+
+    /**
+     * 文件内容字段名称
+     *
+     * @param clientId     clientId - 字段
+     * @param deviceToken  deviceToken - 字段
+     * @param deviceName   deviceName - 字段
+     * @param productKey   productKey - 字段
+     * @param deviceSecret deviceSecret - 字段
+     */
+    public void setFields(String clientId, String deviceToken, String deviceName, String productKey, String deviceSecret) {
+        clientIdField = clientId;
+        deviceTokenField = deviceToken;
+        deviceNameField = deviceName;
+        productKeyField = productKey;
+        deviceSecretField = deviceSecret;
+        Log.d(TAG, "set fields clientId = " + clientId + ",deviceToken = " + deviceToken + ",deviceName = " + deviceName + ",productKey = " + productKey + ",deviceSecret = " + deviceSecret);
     }
 
     /**
@@ -169,7 +235,6 @@ public class License {
         }
         receiver.addTriplesListener(listener);
     }
-
 
     /**
      * 移除三元组监听
@@ -246,6 +311,8 @@ public class License {
         }
         try {
             JSONObject object = new JSONObject(content);
+            setClientId(object.optString(clientIdField));
+            setDeviceToken(object.optString(deviceTokenField));
             setDeviceName(object.optString(deviceNameField));
             setProductKey(object.optString(productKeyField));
             setDeviceSecret(object.optString(deviceSecretField));
@@ -273,6 +340,8 @@ public class License {
                 String deviceName = obj.optString(deviceNameField);
                 if (deviceId.equals(deviceName)) {
                     setDeviceName(deviceName);
+                    setClientId(obj.optString(clientIdField));
+                    setDeviceToken(obj.optString(deviceTokenField));
                     setProductKey(obj.optString(productKeyField));
                     setDeviceSecret(obj.optString(deviceSecretField));
                 }
@@ -284,25 +353,16 @@ public class License {
     }
 
     /**
-     * 加载本地Key Secret
-     *
-     * @return 0:已注册,-1:未注册
-     */
-    public int verify() {
-        String content = getLicense();
-        if (TextUtils.isEmpty(content)) {
-            return -1;
-        }
-        return 0;
-    }
-
-    /**
      * 是否许可过
      *
      * @return
      */
     public boolean isLicensed() {
-        return verify() == 0;
+        String content = getLicense();
+        if (TextUtils.isEmpty(content)) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -427,27 +487,44 @@ public class License {
     }
 
     /**
+     * 客户端id
+     * @return
+     */
+    public String getClientId() {
+        return clientId;
+    }
+
+    /**
+     * 设置客户端id
+     * @param clientId
+     */
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    /**
+     * 设备令牌
+     * @return
+     */
+    public String getDeviceToken() {
+        return deviceToken;
+    }
+
+    /**
+     * 设置设备令牌
+     * @param deviceToken
+     */
+    public void setDeviceToken(String deviceToken) {
+        this.deviceToken = deviceToken;
+    }
+
+    /**
      * 获取三元组文件夹
      *
      * @return
      */
     public File getLicenseDir() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-            File dirFile = getContext().getExternalFilesDir(dir);
-            if (!dirFile.exists()) {
-                dirFile.mkdirs();
-            }
-            return dirFile;
-        }
-        File projectDir = new File(Environment.getExternalStorageDirectory(), project);
-        if (!projectDir.exists()) {
-            projectDir.mkdirs();
-        }
-        File dirFile = new File(projectDir, dir);
-        if (!dirFile.exists()) {
-            dirFile.mkdirs();
-        }
-        return dirFile;
+        return External.getStorageDir(context, project, dir);
     }
 
     /**
@@ -456,9 +533,7 @@ public class License {
      * @return
      */
     public File getLicenseKey() {
-        File file = new File(getLicenseDir(), "license.key");
-        Log.d(TAG, "key path:" + file.getAbsolutePath());
-        return file;
+        return new File(getLicenseDir(), "license.key");
     }
 
     /**
@@ -467,29 +542,24 @@ public class License {
      * @return
      */
     public File getLicenseIni() {
-        File file = new File(getLicenseDir(), "license.ini");
-        Log.d(TAG, "ini path:" + file.getAbsolutePath());
-        return file;
+        return new File(getLicenseDir(), "license.ini");
     }
 
     /**
      * 授权三元组信息到文件
      */
     public void granted() {
-        Log.d(TAG, "granted");
         String content = toJSONString();
         //密钥文件
         File keyFile = getLicenseKey();
         String key = AES.randomKey();
         Writer keyWriter = new Writer(keyFile);
         keyWriter.sync(key, false);
-        Log.d(TAG, "key:" + key);
         //许可文件
         File iniFile = getLicenseIni();
         String ini = AES.encrypt(content, key);
         Writer iniWriter = new Writer(iniFile);
         iniWriter.sync(ini, false);
-        Log.d(TAG, "ini:" + ini);
     }
 
     /**
@@ -498,7 +568,6 @@ public class License {
      * @return
      */
     public String getLicense() {
-        Log.d(TAG, "getLicense");
         File licenseKey = getLicenseKey();
         if (!licenseKey.exists()) {
             return null;
@@ -510,9 +579,8 @@ public class License {
             return null;
         }
         key = key.replace("\n", "");
-        Log.d(TAG, "key:"+key);
         File licenseIni = getLicenseIni();
-        if (!licenseIni.exists()){
+        if (!licenseIni.exists()) {
             return null;
         }
         Reader iniReader = new Reader(licenseIni);
@@ -522,7 +590,6 @@ public class License {
             return null;
         }
         ini = ini.replace("\n", "");
-        Log.d(TAG, "ini:"+ini);
         String content = AES.decrypt(ini, key);
         return content;
     }
@@ -531,7 +598,6 @@ public class License {
      * 注销三元组信息
      */
     public void revoked() {
-        Log.i(TAG, "revoked license");
         getLicenseKey().deleteOnExit();
         getLicenseIni().deleteOnExit();
     }
@@ -544,6 +610,8 @@ public class License {
     public String toJSONString() {
         JSONObject object = new JSONObject();
         try {
+            object.put(clientIdField, clientId == null ? "" : clientId);
+            object.put(deviceTokenField, deviceToken == null ? "" : deviceToken);
             object.put(productKeyField, productKey == null ? "" : productKey);
             object.put(deviceNameField, deviceName == null ? "" : deviceName);
             object.put(deviceSecretField, deviceSecret == null ? "" : deviceSecret);

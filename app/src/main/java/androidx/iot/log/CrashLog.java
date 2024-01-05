@@ -18,7 +18,6 @@ import java.util.Date;
 public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler {
 
     public final String TAG = CrashLog.class.getSimpleName();
-    private Context context;
     /**
      * 异常日志
      */
@@ -27,6 +26,9 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * 时间格式
      */
     private SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    /**
+     * 腾讯Bugly
+     */
     private String appId;
 
     /**
@@ -107,7 +109,7 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      *
      * @return
      */
-    public static CrashLog object() {
+    public static CrashLog acquire() {
         return crash;
     }
 
@@ -117,7 +119,7 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * @param context
      */
     private CrashLog(Context context) {
-        this.context = context;
+        super(context);
         setFolder("IoT", "Exception");
         setPrefix("exp");
         Thread.setDefaultUncaughtExceptionHandler(this);
@@ -156,14 +158,10 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * @return
      */
     private CrashLog(Context context, String project, String dir, String prefix) {
-        super(project, dir, prefix);
-        this.context = context;
+        super(context,project, dir, prefix);
         Thread.setDefaultUncaughtExceptionHandler(this);
     }
 
-    public Context getContext() {
-        return context;
-    }
 
     /**
      * 设置腾讯Bugly

@@ -345,13 +345,13 @@ public class LogService {
      * @param content 信息
      */
     private static void report(LogLevel level, String module, int code, String content) {
-        if (Link.mqtt() == null) {
+        if (Link.acquire() == null) {
             return;
         }
-        if (Link.mqtt().api() == null) {
+        if (Link.api() == null) {
             return;
         }
-        Link.mqtt().api().publishLog(level, module, String.valueOf(code), String.valueOf(System.currentTimeMillis()), content);
+        Link.api().publishLog(level, module, String.valueOf(code), String.valueOf(System.currentTimeMillis()), content);
     }
 
 }

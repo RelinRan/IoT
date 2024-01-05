@@ -6,7 +6,7 @@ import org.json.JSONObject;
 /**
  * Mqtt参数
  */
-public class MqttOption {
+public class MqttOptions {
 
     /**
      * 服务器地址
@@ -25,10 +25,10 @@ public class MqttOption {
      */
     private String password;
 
-    public MqttOption() {
+    public MqttOptions() {
     }
 
-    public MqttOption(String host, String clientId, String userName, String password) {
+    public MqttOptions(String host, String clientId, String userName, String password) {
         this.host = host;
         this.clientId = clientId;
         this.userName = userName;
@@ -41,8 +41,8 @@ public class MqttOption {
      * @param json JSONObject数据
      * @return
      */
-    public static MqttOption from(String json) {
-        MqttOption options = new MqttOption();
+    public static MqttOptions from(String json) {
+        MqttOptions options = new MqttOptions();
         try {
             JSONObject object = new JSONObject(json);
             options.setHost(object.optString("host"));

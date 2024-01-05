@@ -1,10 +1,11 @@
 package androidx.iot.log;
 
-import android.os.Environment;
+import android.content.Context;
 
 import androidx.iot.text.OnReadListener;
 import androidx.iot.text.Reader;
 import androidx.iot.text.Writer;
+import androidx.iot.utils.External;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -16,6 +17,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class LogFile {
 
+    /**
+     * 上下文
+     */
+    private Context context;
     /**
      * 根路径
      */
@@ -74,21 +79,32 @@ public class LogFile {
     private boolean supportScheduled = true;
 
     /**
-     * 日志文件
+     * 获取上下文
+     * @return
      */
-    public LogFile() {
-        initialize("IoT", "Log", "log");
+    public Context getContext() {
+        return context;
     }
 
     /**
      * 日志文件
      *
+     * @param context 上下文
+     */
+    public LogFile(Context context) {
+        initializeParameters(context, "IoT", "Log", "log");
+    }
+
+    /**
+     * 日志文件
+     *
+     * @param context 上下文
      * @param project 项目名称
      * @param dir     文件夹
      * @param prefix  文件前缀
      */
-    public LogFile(String project, String dir, String prefix) {
-        initialize(project, dir, prefix);
+    public LogFile(Context context, String project, String dir, String prefix) {
+        initializeParameters(context, project, dir, prefix);
     }
 
     /**
@@ -98,9 +114,10 @@ public class LogFile {
      * @param dir     文件夹
      * @param prefix  文件前缀
      */
-    protected void initialize(String project, String dir, String prefix) {
+    protected void initializeParameters(Context context, String project, String dir, String prefix) {
+        this.context = context;
         dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        setRoot(Environment.getExternalStorageDirectory());
+        setRoot(External.getStorageDir(context));
         setFolder(project, dir);
         setPrefix(prefix);
         setSuffix(".txt");

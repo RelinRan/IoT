@@ -47,7 +47,6 @@ public class LicenseReceiver extends BroadcastReceiver {
      * 三元组监听
      */
     private ConcurrentHashMap<Long, OnLicenseListener> triplesHashMap;
-    private Context context;
 
     /**
      * 注册
@@ -55,7 +54,6 @@ public class LicenseReceiver extends BroadcastReceiver {
      * @param context
      */
     public void register(Context context) {
-        this.context = context;
         triplesMessage = new TriplesMessage();
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
@@ -63,7 +61,7 @@ public class LicenseReceiver extends BroadcastReceiver {
         filter.addDataScheme("file");
         context.registerReceiver(this, filter);
         //原先U盘已插入,如果没有注册，进行注册流程.
-        boolean isLicensed = License.with(context).isLicensed();
+        boolean isLicensed = License.acquire().isLicensed();
         Log.d(TAG, "register licensed:" + isLicensed);
         if (!isLicensed) {
             List<String> paths = Device.getRemovableStorageVolumePath(context);
@@ -97,7 +95,6 @@ public class LicenseReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        this.context = context;
         String action = intent.getAction();
         Log.i(TAG, "action = " + action);
         if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
@@ -146,11 +143,11 @@ public class LicenseReceiver extends BroadcastReceiver {
         future = service.submit(() -> {
             File file = findLicense(new File(path));
             if (file == null || !file.exists()) {
-                Log.e(TAG, License.with(context).getName() + " file does not exist");
+                Log.e(TAG, License.acquire().getName() + " file does not exist");
             } else {
                 Reader reader = new Reader(file);
                 String content = reader.sync();
-                License.with(context).fromJSON(content).granted();
+                License.acquire().fromJSON(content).granted();
                 if (triplesHashMap != null) {
                     for (Long key : triplesHashMap.keySet()) {
                         triplesMessage.send(content, triplesHashMap.get(key));
@@ -177,7 +174,7 @@ public class LicenseReceiver extends BroadcastReceiver {
                     }
                     String name = child.getName();
                     Log.d(TAG, name);
-                    if (name.equals(License.with(context).getName())) {
+                    if (name.equals(License.acquire().getName())) {
                         Log.d(TAG, child.getAbsolutePath());
                         return child;
                     }

@@ -17,7 +17,7 @@ repositories {
 
 ```
 dependencies {
-	implementation 'com.github.RelinRan:IoT:2023.9.15.1'
+	implementation 'com.github.RelinRan:IoT:2024.01.05.1'
 }
 ```
 
@@ -91,7 +91,7 @@ res/xml/path.xml
         path="/storage/emulated/0/Android/data/${applicationId}/files/TBS" />
 </paths>
 ```
-#### 通用MQTT
+#### 通用Mqtt
 连接MQTT
 ```
 MqttOption option = new MqttOption();
@@ -110,11 +110,11 @@ Mqtt client = Mqtt.client();
 client.remove(cid.mid);
 ```
 
-#### 阿里初始化
-注册三元组许可文件
+#### 设备授权
+初始化三元组许可文件
 
 ```
-License.initialize("You Project Name","License","triplet.txt");
+License.initialize(LicenseType.PRE_REGISTRATION,"You Project Name","License","triplet.txt");
 ```
 U盘注册三元组（文件名：triplet.txt）
 
@@ -125,7 +125,7 @@ U盘注册三元组（文件名：triplet.txt）
 注册三元组许可到设备
 
 ```
-License license = License.with(context);
+License license = License.acquire();
 params.setDeviceName(xxx);
 params.setProductKey(xxx);
 params.setDeviceSecret(xxx);
@@ -135,7 +135,7 @@ license.granted();
 检查是否授权许可设备
 
 ```
-License license = License.with(context);
+License license = License.acquire();
 boolean isLicensed = license.isLicensed();
 ```
 
@@ -151,18 +151,44 @@ public void onLicense(String content) {
     //三元组内容
 }
 ```
-#### 阿里MQTT
+#### 动态注册
 
-连接服务
+一型一密预注册
+```
+Dynamic dynamic = new Dynamic();
+dynamic.addDynamicListener((topic, payload) -> {
+    License.acquire().fromJSON(payload).granted();
+    //接下来可以使用授权文件执行连接操作
+});
+dynamic.register("Your instane id", "product key", "product secret", "device name");
+```
+一型一密免预注册
+```
+Dynamic dynamic = new Dynamic();
+dynamic.addDynamicListener((topic, payload) -> {
+    License.acquire().fromJSON(payload).granted();
+    //接下来可以使用授权文件执行连接操作
+});
+dynamic.regnwl("Your instane id", "product key", "product secret", "device name");
+```
+#### 阿里物联网
+
+一型一密预注册连接服务
 
 ```
-License license = License.with(context);
-params.setDeviceName(xxx);
-params.setProductKey(xxx);
-params.setDeviceSecret(xxx);
-String url = Link.URL(params.getProductKey(), "cn-shanghai", 1883);
-Link link = Link.initialize(context.getApplicationContext(), url, license);
-link.setDebug(true);
+Link link = Link.initialize(this, LicenseType.PRE_REGISTRATION);
+link.debug(true);
+long cid = link.addConnectListener(xxx);
+long mid = link.addMessageListener(xxx);
+link.connect();
+```
+一型一密免预注册连接服务
+
+```
+Link link = Link.initialize(this, LicenseType.NO_PRE_REGISTRATION);
+link.debug(true);
+long cid = link.addConnectListener(xxx);
+long mid = link.addMessageListener(xxx);
 link.connect();
 ```
 
@@ -172,7 +198,7 @@ link.connect();
 //当前class implements OnConnectListener
 
 //可跨页面设置监听,不用EventBus等转发信息,页面关闭注意根据id移除监听
-long cid = Link.mqtt().addMessageListener(this);
+long cid = Link.acquire().addMessageListener(this);
 
 @Override
 public void onConnectionLost(Throwable cause) {
@@ -190,7 +216,7 @@ public void onConnectionFailed(IMqttToken token, Throwable exception) {
 }
 
 //页面关闭时移除监听
-Link.mqtt().remove(cid);
+Link.acquire().remove(cid);
 ```
 
 消息监听
@@ -199,7 +225,7 @@ Link.mqtt().remove(cid);
 //当前class implements OnMessageListener
 
 //可跨页面设置监听,不用EventBus等转发信息,页面关闭注意根据id移除监听
-long mid = Link.mqtt().addMessageListener(this);
+long mid = Link.acquire().addMessageListener(this);
 
 @Override
 public void onMessageReceived(String topic, MqttMessage message) {
@@ -212,7 +238,7 @@ public void onMessageDelivered(IMqttDeliveryToken token) {
 }
 
 //页面关闭时移除监听
-Link.mqtt().remove(mid);
+Link.acquire().remove(mid);
 ```
 
 释放资源
@@ -220,14 +246,14 @@ Link.mqtt().remove(mid);
 ```
 //移除监听
 link.remove(cid, mid);
-//断开连接
-link.disconnect();
+//释放资源
+link.destroy();
 ```
 #### 日志文件
 通用日志
 ```
 //初始化：项目名称/文件夹名称/日志文件前缀名
-LogFile log = new LogFile("Your Project Name","Your Dir Name","Log");
+LogFile log = new LogFile(context,"Your Project Name","Your Dir Name","Log");
 //写入内容
 log.write("file content");
 
@@ -274,7 +300,7 @@ LogService.d(false,"模块", 200, "日志信息");
 ```
 Map<String,Object> map = new HashMap<>();
 map.put("power",1);
-Link.mqtt().api().publishProperty(map);
+Link.api().publishProperty(map);
 ```
 #### 事件上报
 
@@ -284,12 +310,12 @@ Map<String, Object> params = new HashMap<>();
 params.put("name", "value");
 //functionBlockId 自定义模块id,默认模块为空.
 //identifier      属性标识符
-Link.mqtt().api().publishEvent("functionBlockId", "identifier", params);
+Link.api().publishEvent("functionBlockId", "identifier", params);
 ```
 #### OTA
 订阅升级主题
 ```
-Link.mqtt().api().subscribeOTA();
+Link.api().subscribeOTA();
 ```
 平台推送升级
 ```
@@ -304,7 +330,7 @@ public void onMessageReceived(String topic, MqttMessage message) {
 用户主动升级
 ```
 //default为模块名称
-Link.mqtt().api().publishOTAGet("default");
+Link.api().publishOTAGet("default");
 
 @Override
 public void onMessageReceived(String topic, MqttMessage message) {

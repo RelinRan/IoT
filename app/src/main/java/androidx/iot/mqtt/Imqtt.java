@@ -18,6 +18,11 @@ public interface Imqtt {
     void disconnect();
 
     /**
+     * 销毁所有资源
+     */
+    void destroy();
+
+    /**
      * 是否已连接
      * @return
      */
@@ -85,9 +90,4 @@ public interface Imqtt {
      */
     Imqtt clear();
 
-    /**
-     * 重置
-     * @return
-     */
-    Imqtt reset();
 }

@@ -1,0 +1,232 @@
+package androidx.iot.aiot;
+
+import android.util.Log;
+
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * 动态注册
+ */
+public class Dynamic implements MqttCallback {
+
+    private String TAG = Dynamic.class.getSimpleName();
+    /**
+     * Mqtt客户端
+     */
+    private MqttClient mqttClient;
+    /**
+     * Mqtt参数
+     */
+    private MqttConnectOptions mqttConnectOptions;
+    /**
+     * 动态注册监听
+     */
+    private ConcurrentHashMap<Long, OnDynamicListener> map;
+    private boolean messageArrived;
+
+    public Dynamic() {
+        map = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * 添加动态注册监听
+     *
+     * @param id       监听id
+     * @param listener 动态注册监听
+     * @return
+     */
+    public Long addDynamicListener(Long id, OnDynamicListener listener) {
+        map.put(id, listener);
+        return id;
+    }
+
+    /**
+     * 添加动态注册监听
+     *
+     * @param listener 动态注册监听
+     * @return
+     */
+    public Long addDynamicListener(OnDynamicListener listener) {
+        Long id = System.currentTimeMillis() + map.size();
+        map.put(id, listener);
+        return id;
+    }
+
+    /**
+     * 移除监听
+     *
+     * @param ids 动态注册监听id
+     */
+    public void remove(Long... ids) {
+        if (map.size() == 0) {
+            return;
+        }
+        for (Long id : ids) {
+            map.remove(id);
+        }
+    }
+
+    /**
+     * 一型一密预注册认证方式
+     * 主题：/ext/register
+     * 返回：{"deviceSecret":"xxx","productKey":"xxx","deviceName":"xxx"}
+     *
+     * @param productKey    产品key
+     * @param productSecret 产品secret
+     * @param deviceName    设备ID
+     */
+    public int register(String productKey, String productSecret, String deviceName) {
+        return register(ServerURL.value(true, productKey, "cn-shanghai", 1883), null, productKey, productSecret, deviceName);
+    }
+
+    /**
+     * 一型一密预注册认证方式
+     * 主题：/ext/register
+     * 返回：{"deviceSecret":"xxx","productKey":"xxx","deviceName":"xxx"}
+     *
+     * @param instanceId    实列ID
+     * @param productKey    产品key
+     * @param productSecret 产品secret
+     * @param deviceName    设备ID
+     * @return 0：成功
+     */
+    public int register(String instanceId, String productKey, String productSecret, String deviceName) {
+        return register(ServerURL.value(true, productKey, "cn-shanghai", 1883), instanceId, productKey, productSecret, deviceName);
+    }
+
+    /**
+     * 一型一密预注册认证方式
+     * 主题：/ext/register
+     * 返回：{"deviceSecret":"xxx","productKey":"xxx","deviceName":"xxx"}
+     *
+     * @param url           服务地址
+     * @param instanceId    实列ID
+     * @param productKey    产品key
+     * @param productSecret 产品secret
+     * @param deviceName    设备ID
+     * @return 0：成功
+     */
+    public int register(String url, String instanceId, String productKey, String productSecret, String deviceName) {
+        try {
+            Options options = new Options().register(instanceId, productKey, productSecret, deviceName);
+            MemoryPersistence persistence = new MemoryPersistence();
+            mqttClient = new MqttClient(url, options.getClientId(), persistence);
+            mqttConnectOptions = new MqttConnectOptions();
+            mqttConnectOptions.setMqttVersion(4);// MQTT 3.1.1
+            mqttConnectOptions.setUserName(options.getUsername());// 用户名
+            mqttConnectOptions.setPassword(options.getPassword().toCharArray());// 密码
+            mqttConnectOptions.setAutomaticReconnect(false);//MQTT动态注册协议规定必须关闭自动重连。
+            mqttClient.setCallback(this);
+            Log.i(TAG, url + "\n" + options.getClientId() + "\n" + options.getUsername() + "\n" + options.getPassword());
+            messageArrived = false;
+            mqttClient.connect(mqttConnectOptions);
+        } catch (MqttException e) {
+            Log.e(TAG, "reason " + e.getReasonCode() + " message " + e.getMessage());
+            e.printStackTrace();
+            return e.getReasonCode();
+        }
+        return 0;
+    }
+
+    /**
+     * 一型一密免预注册认证方式
+     * 主题：/ext/regnwl
+     * 返回：{"clientId":"xxx","productKey":"xxx","deviceName":"xxx","deviceToken":"xxx"}
+     *
+     * @param productKey    产品key
+     * @param productSecret 产品secret
+     * @param deviceName    设备ID
+     * @return 0：成功
+     */
+    public void regnwl(String productKey, String productSecret, String deviceName) {
+        register(ServerURL.value(true, productKey, "cn-shanghai", 1883), null, productKey, productSecret, deviceName);
+    }
+
+    /**
+     * 一型一密免预注册认证方式
+     * 主题：/ext/regnwl
+     * 返回：{"clientId":"xxx","productKey":"xxx","deviceName":"xxx","deviceToken":"xxx"}
+     *
+     * @param instanceId    实列ID
+     * @param productKey    产品key
+     * @param productSecret 产品secret
+     * @param deviceName    设备ID
+     * @return 0：成功
+     */
+    public int regnwl(String instanceId, String productKey, String productSecret, String deviceName) {
+        return regnwl(ServerURL.value(true, productKey, "cn-shanghai", 1883), instanceId, productKey, productSecret, deviceName);
+    }
+
+    /**
+     * 一型一密免预注册认证方式
+     * 主题：/ext/regnwl
+     * 返回：{"clientId":"xxx","productKey":"xxx","deviceName":"xxx","deviceToken":"xxx"}
+     *
+     * @param url           服务地址
+     * @param instanceId    实列ID
+     * @param productKey    产品key
+     * @param productSecret 产品secret
+     * @param deviceName    设备ID
+     * @return 0：成功
+     */
+    public int regnwl(String url, String instanceId, String productKey, String productSecret, String deviceName) {
+        try {
+            Options options = new Options().regnwl(instanceId, productKey, productSecret, deviceName);
+            MemoryPersistence persistence = new MemoryPersistence();
+            mqttClient = new MqttClient(url, options.getClientId(), persistence);
+            mqttConnectOptions = new MqttConnectOptions();
+            mqttConnectOptions.setMqttVersion(4);// MQTT 3.1.1
+            mqttConnectOptions.setUserName(options.getUsername());// 用户名
+            mqttConnectOptions.setPassword(options.getPassword().toCharArray());// 密码
+            mqttConnectOptions.setAutomaticReconnect(false);//MQTT动态注册协议规定必须关闭自动重连。
+            mqttClient.setCallback(this);
+            Log.i(TAG, url + "\n" + options.getClientId() + "\n" + options.getUsername() + "\n" + options.getPassword());
+            messageArrived = false;
+            mqttClient.connect(mqttConnectOptions);
+        } catch (MqttException e) {
+            Log.e(TAG, "reason " + e.getReasonCode() + " message " + e.getMessage());
+            e.printStackTrace();
+            return e.getReasonCode();
+        }
+        return 0;
+    }
+
+    @Override
+    public void connectionLost(Throwable throwable) {
+        Log.i(TAG, "connection lost");
+    }
+
+    @Override
+    public void messageArrived(String topic, MqttMessage message) throws Exception {
+        String payload = new String(message.getPayload());
+        Log.i(TAG, "received " + topic + " " + payload);
+        messageArrived = true;
+        for (Long key : map.keySet()) {
+            map.get(key).onDynamicRegisterReceived(topic, payload);
+        }
+    }
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken token) {
+
+    }
+
+    public void disconnect(){
+        if (mqttClient!=null&&mqttClient.isConnected()){
+            try {
+                mqttClient.disconnect(400);
+            } catch (MqttException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+}
