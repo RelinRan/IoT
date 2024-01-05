@@ -8,7 +8,7 @@ Paho Client Mqtt3-1.1.0
 
 |名字|资源|
 |-|-|
-|AAR|[下载](https://github.com/RelinRan/MQTT/tree/main/aar)|
+|AAR|[下载](https://github.com/RelinRan/IoT/tree/main/aar)|
 |GitHub |[查看](https://github.com/RelinRan/MQTT)|
 |Gitee|[查看](https://gitee.com/relin/MQTT)|
 
