@@ -99,6 +99,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
      */
     public void setMqttAndroidClientOptions(Context context, MqttOptions options) {
         mqttAndroidClient = new MqttAndroidClient(context.getApplicationContext(), options.getHost(), options.getClientId());
+        mqttAndroidClient.registerResources(context.getApplicationContext());
         mqttAndroidClient.setCallback(this);
         mqttConnectOptions = new MqttConnectOptions();
         mqttConnectOptions.setUserName(options.getUserName());
@@ -164,31 +165,16 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     @Override
     public void disconnect() {
         try {
-            if (mqttAndroidClient != null && mqttAndroidClient.isConnected()) {
+            if (mqttAndroidClient != null) {
                 mqttAndroidClient.unregisterResources();
-                mqttAndroidClient.disconnect(200);
+                Thread.sleep(50);
+                mqttAndroidClient.disconnect();
             }
         } catch (MqttException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-    }
-
-    @Override
-    public void destroy() {
-        disconnect();
-        if (messageHashMap != null) {
-            messageHashMap.clear();
-            connectHashMap = null;
-        }
-        if (connectHashMap != null) {
-            connectHashMap.clear();
-            connectHashMap = null;
-        }
-        if (handler != null) {
-            handler.destroy();
-            handler = null;
-        }
-        instance = null;
     }
 
     @Override
@@ -361,6 +347,24 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
             connectHashMap.clear();
         }
         return this;
+    }
+
+    @Override
+    public void destroy() {
+        disconnect();
+        if (messageHashMap != null) {
+            messageHashMap.clear();
+            connectHashMap = null;
+        }
+        if (connectHashMap != null) {
+            connectHashMap.clear();
+            connectHashMap = null;
+        }
+        if (handler != null) {
+            handler.destroy();
+            handler = null;
+        }
+        instance = null;
     }
 
 }
