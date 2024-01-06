@@ -1,6 +1,11 @@
 package androidx.iot.aiot;
 
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.iot.entity.DynamicBody;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -30,10 +35,11 @@ public class Dynamic implements MqttCallback {
      * 动态注册监听
      */
     private ConcurrentHashMap<Long, OnDynamicListener> map;
-    private boolean messageArrived;
+    private DynamicHandler handler;
 
     public Dynamic() {
         map = new ConcurrentHashMap<>();
+        handler = new DynamicHandler();
     }
 
     /**
@@ -126,7 +132,6 @@ public class Dynamic implements MqttCallback {
             mqttConnectOptions.setAutomaticReconnect(false);//MQTT动态注册协议规定必须关闭自动重连。
             mqttClient.setCallback(this);
             Log.i(TAG, url + "\n" + options.getClientId() + "\n" + options.getUsername() + "\n" + options.getPassword());
-            messageArrived = false;
             mqttClient.connect(mqttConnectOptions);
         } catch (MqttException e) {
             Log.e(TAG, "reason " + e.getReasonCode() + " message " + e.getMessage());
@@ -189,7 +194,6 @@ public class Dynamic implements MqttCallback {
             mqttConnectOptions.setAutomaticReconnect(false);//MQTT动态注册协议规定必须关闭自动重连。
             mqttClient.setCallback(this);
             Log.i(TAG, url + "\n" + options.getClientId() + "\n" + options.getUsername() + "\n" + options.getPassword());
-            messageArrived = false;
             mqttClient.connect(mqttConnectOptions);
         } catch (MqttException e) {
             Log.e(TAG, "reason " + e.getReasonCode() + " message " + e.getMessage());
@@ -205,12 +209,11 @@ public class Dynamic implements MqttCallback {
     }
 
     @Override
-    public void messageArrived(String topic, MqttMessage message) throws Exception {
+    public void messageArrived(String topic, MqttMessage message) {
         String payload = new String(message.getPayload());
         Log.i(TAG, "received " + topic + " " + payload);
-        messageArrived = true;
         for (Long key : map.keySet()) {
-            map.get(key).onDynamicRegisterReceived(topic, payload);
+            handler.send(new DynamicBody(topic, payload, map.get(key)));
         }
     }
 
@@ -219,13 +222,46 @@ public class Dynamic implements MqttCallback {
 
     }
 
-    public void disconnect(){
-        if (mqttClient!=null&&mqttClient.isConnected()){
+    /**
+     * 断开连接
+     */
+    public void disconnect() {
+        if (mqttClient != null && mqttClient.isConnected()) {
             try {
                 mqttClient.disconnect(400);
             } catch (MqttException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    public class DynamicHandler extends Handler {
+
+        public void send(DynamicBody body) {
+            Message message = obtainMessage();
+            message.what = 1;
+            message.obj = body;
+            sendMessage(message);
+        }
+
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            DynamicBody body = (DynamicBody) msg.obj;
+            if (body != null && body.getListener() != null) {
+                body.getListener().onDynamicRegisterReceived(body.getTopic(), body.getPayload());
+            }
+        }
+    }
+
+    /**
+     * 释放资源
+     */
+    public void destroy() {
+        if (handler != null) {
+            handler.removeMessages(1);
+            handler.removeCallbacksAndMessages(null);
+            handler = null;
         }
     }
 
