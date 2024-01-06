@@ -2,10 +2,22 @@ package androidx.iot.entity;
 
 import androidx.iot.aiot.OnDynamicListener;
 
+/**
+ * 动态注册消息体
+ */
 public class DynamicBody {
 
+    /**
+     * 主题
+     */
     private String topic;
+    /**
+     * 返回内容
+     */
     private String payload;
+    /**
+     * 动态注册监听
+     */
     private OnDynamicListener listener;
 
     public DynamicBody(String topic, String payload, OnDynamicListener listener) {

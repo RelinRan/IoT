@@ -32,6 +32,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
      * 是否调试
      */
     private boolean debug;
+    private MqttHandler handler;
     /**
      * MQTT
      */
@@ -40,6 +41,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
 
     public Mqtt() {
         Log.i(TAG, "instantiation mqtt");
+        handler = new MqttHandler();
     }
 
     /**
@@ -103,7 +105,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
         mqttConnectOptions.setPassword(options.getPassword().toCharArray());
         Log.i(TAG, "service url " + options.getHost());
         if (debug) {
-            Log.i(TAG, options.getClientId()+" "+options.getUserName()+" "+options.getPassword());
+            Log.i(TAG, options.getClientId() + " " + options.getUserName() + " " + options.getPassword());
         }
     }
 
@@ -182,6 +184,10 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
             connectHashMap.clear();
             connectHashMap = null;
         }
+        if (handler != null) {
+            handler.destroy();
+            handler = null;
+        }
         instance = null;
     }
 
@@ -206,7 +212,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
         }
         if (connectHashMap != null) {
             for (Long key : connectHashMap.keySet()) {
-                connectHashMap.get(key).onConnectionLost(cause);
+                handler.connectionLost(cause, connectHashMap.get(key));
             }
         }
     }
@@ -219,7 +225,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
         }
         if (messageHashMap != null) {
             for (Long key : messageHashMap.keySet()) {
-                messageHashMap.get(key).onMessageReceived(topic, message);
+                handler.messageArrived(topic, message, messageHashMap.get(key));
             }
         }
     }
@@ -228,7 +234,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     public void deliveryComplete(IMqttDeliveryToken token) {
         if (messageHashMap != null) {
             for (Long key : messageHashMap.keySet()) {
-                messageHashMap.get(key).onMessageDelivered(token);
+                handler.deliveryComplete(token, messageHashMap.get(key));
             }
         }
     }
@@ -240,7 +246,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
         Log.i(TAG, "connection successful");
         if (connectHashMap != null) {
             for (Long key : connectHashMap.keySet()) {
-                connectHashMap.get(key).onConnectionSuccessful(token);
+                handler.connectionSuccessful(token, connectHashMap.get(key));
             }
         }
     }
@@ -250,7 +256,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
         Log.i(TAG, "connection failed");
         if (connectHashMap != null) {
             for (Long key : connectHashMap.keySet()) {
-                connectHashMap.get(key).onConnectionFailed(token, exception);
+                handler.connectFailed(token, exception, connectHashMap.get(key));
             }
         }
     }
