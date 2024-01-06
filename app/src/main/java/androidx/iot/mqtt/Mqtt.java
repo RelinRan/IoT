@@ -167,7 +167,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
         try {
             if (mqttAndroidClient != null) {
                 mqttAndroidClient.unregisterResources();
-                Thread.sleep(50);
+                Thread.sleep(100);
                 mqttAndroidClient.disconnect();
             }
         } catch (MqttException e) {
