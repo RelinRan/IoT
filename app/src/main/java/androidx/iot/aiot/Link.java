@@ -75,7 +75,7 @@ public class Link extends Mqtt {
      * @return
      */
     public static Link acquire() {
-        if (link==null){
+        if (link == null) {
             Log.e(TAG, "Link has not been initialized");
         }
         return link;
@@ -87,6 +87,9 @@ public class Link extends Mqtt {
      * @return
      */
     public static Alink api() {
+        if (link == null) {
+            return null;
+        }
         return link.alink;
     }
 

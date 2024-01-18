@@ -273,6 +273,9 @@ public class Alink {
             return false;
         }
         String version = response.getData().getVersion();
+        if (version == null || version.length() == 0) {
+            return false;
+        }
         return Apk.isNewVersion(context, version);
     }
 
