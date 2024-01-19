@@ -60,19 +60,19 @@ public class WiFiReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-        if (action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION)) {
-            boolean enable = wifiManager.isWifiEnabled();
-            Log.d(TAG, "enable = " + enable);
-            if (onWiFiListener != null) {
-                onWiFiListener.onAvailableStatus(wifiManager, enable);
-            }
-        }
         if (action.equals(WifiManager.RSSI_CHANGED_ACTION)) {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             int strength = wifiInfo.getRssi();
             Log.d(TAG, "strength = " + strength);
             if (onWiFiListener != null) {
                 onWiFiListener.onRssiChanged(wifiManager, strength);
+            }
+        }
+        if (action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION)) {
+            boolean enable = wifiManager.isWifiEnabled();
+            Log.d(TAG, "enable = " + enable);
+            if (onWiFiListener != null) {
+                onWiFiListener.onAvailableStatus(wifiManager, enable);
             }
         }
     }
