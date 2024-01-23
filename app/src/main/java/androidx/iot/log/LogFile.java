@@ -80,6 +80,7 @@ public class LogFile {
 
     /**
      * 获取上下文
+     *
      * @return
      */
     public Context getContext() {
@@ -377,6 +378,48 @@ public class LogFile {
             scheduled = null;
         }
     }
+
+    /**
+     * 计算文件夹大小
+     *
+     * @param folder 文件夹
+     * @return
+     */
+    public long calculateFolderSize(File folder) {
+        if (!folder.isDirectory()) {
+            return folder.length();
+        }
+        long totalSize = 0;
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    totalSize += file.length();
+                } else {
+                    totalSize += calculateFolderSize(file);
+                }
+            }
+        }
+        return totalSize;
+    }
+
+    /**
+     * 删除文件夹
+     *
+     * @param folder 文件夹
+     */
+    public void deleteFolder(File folder) {
+        if (folder.isDirectory()) {
+            File[] files = folder.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    deleteFolder(file);
+                }
+            }
+        }
+        folder.delete();
+    }
+
 
     /**
      * 取消
