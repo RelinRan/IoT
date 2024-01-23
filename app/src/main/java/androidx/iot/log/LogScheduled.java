@@ -149,8 +149,8 @@ public class LogScheduled {
                 long time = dateFormat.parse(date).getTime();
                 long now = System.currentTimeMillis();
                 long diff = now - time;
-                if (isExpired(diff)) {
-                    file.deleteOnExit();
+                if (isExpired(diff) && file.exists()) {
+                    file.delete();
                 }
             } catch (ParseException e) {
                 throw new RuntimeException(e);
