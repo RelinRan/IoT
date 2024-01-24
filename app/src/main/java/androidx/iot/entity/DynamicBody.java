@@ -2,23 +2,19 @@ package androidx.iot.entity;
 
 import androidx.iot.aiot.OnDynamicListener;
 
-/**
- * 动态注册消息体
- */
+import org.eclipse.paho.client.mqttv3.MqttException;
+
 public class DynamicBody {
 
-    /**
-     * 主题
-     */
     private String topic;
-    /**
-     * 返回内容
-     */
     private String payload;
-    /**
-     * 动态注册监听
-     */
+    private MqttException exception;
     private OnDynamicListener listener;
+
+    public DynamicBody(MqttException exception, OnDynamicListener listener) {
+        this.exception = exception;
+        this.listener = listener;
+    }
 
     public DynamicBody(String topic, String payload, OnDynamicListener listener) {
         this.topic = topic;
@@ -40,6 +36,14 @@ public class DynamicBody {
 
     public void setPayload(String payload) {
         this.payload = payload;
+    }
+
+    public MqttException getException() {
+        return exception;
+    }
+
+    public void setException(MqttException exception) {
+        this.exception = exception;
     }
 
     public OnDynamicListener getListener() {

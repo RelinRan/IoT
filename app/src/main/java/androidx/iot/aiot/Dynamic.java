@@ -131,11 +131,13 @@ public class Dynamic implements MqttCallback {
             mqttConnectOptions.setPassword(options.getPassword().toCharArray());// 密码
             mqttConnectOptions.setAutomaticReconnect(false);//MQTT动态注册协议规定必须关闭自动重连。
             mqttClient.setCallback(this);
-            Log.i(TAG, url + "\n" + options.getClientId() + "\n" + options.getUsername() + "\n" + options.getPassword());
             mqttClient.connect(mqttConnectOptions);
         } catch (MqttException e) {
             Log.e(TAG, "reason " + e.getReasonCode() + " message " + e.getMessage());
             e.printStackTrace();
+            for (Long key : map.keySet()) {
+                handler.sendException(new DynamicBody(e, map.get(key)));
+            }
             return e.getReasonCode();
         }
         return 0;
@@ -198,6 +200,9 @@ public class Dynamic implements MqttCallback {
         } catch (MqttException e) {
             Log.e(TAG, "reason " + e.getReasonCode() + " message " + e.getMessage());
             e.printStackTrace();
+            for (Long key : map.keySet()) {
+                handler.sendException(new DynamicBody(e, map.get(key)));
+            }
             return e.getReasonCode();
         }
         return 0;
@@ -206,6 +211,9 @@ public class Dynamic implements MqttCallback {
     @Override
     public void connectionLost(Throwable throwable) {
         Log.i(TAG, "connection lost");
+        for (Long key : map.keySet()) {
+            handler.sendException(new DynamicBody(new MqttException(throwable), map.get(key)));
+        }
     }
 
     @Override
@@ -213,7 +221,7 @@ public class Dynamic implements MqttCallback {
         String payload = new String(message.getPayload());
         Log.i(TAG, "received " + topic + " " + payload);
         for (Long key : map.keySet()) {
-            handler.send(new DynamicBody(topic, payload, map.get(key)));
+            handler.sendReceived(new DynamicBody(topic, payload, map.get(key)));
         }
     }
 
@@ -237,9 +245,16 @@ public class Dynamic implements MqttCallback {
 
     public class DynamicHandler extends Handler {
 
-        public void send(DynamicBody body) {
+        public void sendReceived(DynamicBody body) {
             Message message = obtainMessage();
             message.what = 1;
+            message.obj = body;
+            sendMessage(message);
+        }
+
+        public void sendException(DynamicBody body) {
+            Message message = obtainMessage();
+            message.what = 2;
             message.obj = body;
             sendMessage(message);
         }
@@ -248,8 +263,14 @@ public class Dynamic implements MqttCallback {
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
             DynamicBody body = (DynamicBody) msg.obj;
-            if (body != null && body.getListener() != null) {
-                body.getListener().onDynamicRegisterReceived(body.getTopic(), body.getPayload());
+            if (msg.what == 1) {
+                if (body != null && body.getListener() != null) {
+                    body.getListener().onDynamicRegisterReceived(body.getTopic(), body.getPayload());
+                }
+            } else if (msg.what == 2) {
+                if (body != null && body.getListener() != null) {
+                    body.getListener().onDynamicRegisterFailed(body.getException());
+                }
             }
         }
     }

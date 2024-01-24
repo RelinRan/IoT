@@ -1,5 +1,7 @@
 package androidx.iot.aiot;
 
+import org.eclipse.paho.client.mqttv3.MqttException;
+
 public interface OnDynamicListener {
 
     /**
@@ -9,5 +11,11 @@ public interface OnDynamicListener {
      * @param payload  内容
      */
     void onDynamicRegisterReceived(String topic, String payload);
+
+    /**
+     * 动态注册失败
+     * @param e
+     */
+    void onDynamicRegisterFailed(MqttException e);
 
 }
