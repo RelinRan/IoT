@@ -31,6 +31,7 @@ public class Command implements Runnable {
     private boolean override;
     private boolean pause;
     private boolean cancel;
+    private String projectName = "IoT";
     private String dirName = "Download";
     private String fileName;
     private long totalSize = 0;
@@ -42,6 +43,14 @@ public class Command implements Runnable {
         this.url = url;
         headers = new HashMap<>();
         messenger = new Messenger();
+    }
+
+    /**
+     * 设置项目名称
+     * @param projectName
+     */
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 
     /**

@@ -42,7 +42,7 @@ public class External {
      */
     public static File getStorageDir(Context context, String projectName) {
         if (isSandbox()) {
-            return context.getExternalFilesDir(projectName);
+            return context.getExternalFilesDir(null);
         }
         File dir = new File(Environment.getExternalStorageDirectory(), projectName);
         if (!dir.exists()) {

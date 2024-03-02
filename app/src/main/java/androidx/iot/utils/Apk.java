@@ -127,9 +127,42 @@ public class Apk {
     private static int[] toIntArray(String[] array) {
         int[] items = new int[array.length];
         for (int i = 0; i < items.length; i++) {
-            items[i] = Integer.parseInt(array[i]);
+            String value = array[i];
+            items[i] = filterHorizontalSymbol(value);
         }
         return items;
+    }
+
+    /**
+     * 过滤横向符号
+     *
+     * @param value 数据
+     * @return
+     */
+    private static int filterHorizontalSymbol(String value) {
+        if (value.contains("-")) {
+            StringBuilder builder = new StringBuilder();
+            String[] across = value.split("-");
+            for (int j = 0; j < across.length; j++) {
+                String acrossValue = across[j];
+                if (isNumeric(acrossValue)) {
+                    builder.append(acrossValue);
+                }
+            }
+            return builder.length() == 0 ? 0 : Integer.parseInt(builder.toString());
+        } else {
+            return isNumeric(value) ? Integer.parseInt(value) : 0;
+        }
+    }
+
+    /**
+     * 是否是数字
+     *
+     * @param value
+     * @return
+     */
+    private static boolean isNumeric(String value) {
+        return value.matches("-?\\d+(\\.\\d+)?");
     }
 
     /**

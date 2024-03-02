@@ -52,6 +52,14 @@ public class Downloader {
     }
 
     /**
+     * 设置项目名称s
+     * @param name
+     */
+    public void setProjectName(String name){
+        command.setProjectName(name);
+    }
+
+    /**
      * 设置缓存文件夹名称
      *
      * @param dirName

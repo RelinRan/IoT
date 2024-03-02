@@ -293,6 +293,9 @@ public class Alink {
             return;
         }
         String version = response.getData().getVersion();
+        if (version == null || version.length() == 0) {
+            return;
+        }
         String filename = Apk.getApplicationName(context) + "_" + version + ".apk";
         String url = response.getData().getUrl();
         boolean isUpgrade = Apk.isNewVersion(context, version);

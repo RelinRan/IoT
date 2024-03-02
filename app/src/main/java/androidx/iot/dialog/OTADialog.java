@@ -111,6 +111,31 @@ public class OTADialog extends IoTDialog implements OnDownloadListener {
         downloader.setOnDownloadListener(this);
     }
 
+
+    /**
+     * 设置资源
+     *
+     * @param url         地址
+     * @param projectName 项目名称
+     * @param dirName     文件夹名称，非沙盒不用设置。
+     * @param filename    文件名称
+     */
+    public void setSource(String url, String projectName, String dirName, String filename) {
+        if (url == null || TextUtils.isEmpty(url)) {
+            return;
+        }
+        downloader = new Downloader(getContext(), url);
+        downloader.setOverride(true);
+        if (!TextUtils.isEmpty(projectName)) {
+            downloader.setProjectName(projectName);
+        }
+        if (!TextUtils.isEmpty(dirName)) {
+            downloader.setDirName(dirName);
+        }
+        downloader.setFileName(filename);
+        downloader.setOnDownloadListener(this);
+    }
+
     @Override
     public void show() {
         super.show();

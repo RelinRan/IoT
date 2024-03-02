@@ -65,7 +65,7 @@ public class Tooltip implements Tip {
 
     @Override
     public void success(int icon, String msg) {
-        show(R.drawable.iot_tips_msg, icon, msg);
+        show(R.drawable.iot_tips_msg_bg, icon, msg);
     }
 
     @Override
@@ -75,12 +75,12 @@ public class Tooltip implements Tip {
 
     @Override
     public void failure(String msg) {
-        show(R.drawable.iot_tips_failure, 0, msg);
+        show(R.drawable.iot_tips_failure_bg, 0, msg);
     }
 
     @Override
     public void message(String msg) {
-        show(R.drawable.iot_tips_msg, 0, msg);
+        show(R.drawable.iot_tips_msg_bg, 0, msg);
     }
 
 }
