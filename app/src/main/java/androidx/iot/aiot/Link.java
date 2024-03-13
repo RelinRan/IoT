@@ -151,6 +151,8 @@ public class Link extends Mqtt {
     public void onSuccess(IMqttToken token) {
         alink = new Alink(this, license);
         alink.subscribeOTA();
+        alink.publishOTAVersion();
+        alink.publishNetwork();
         super.onSuccess(token);
     }
 

@@ -1,14 +1,18 @@
 package androidx.iot.aiot;
 
 import android.content.Context;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.text.TextUtils;
 
 import androidx.iot.dialog.OTADialog;
 import androidx.iot.entity.Log;
 import androidx.iot.entity.Network;
 import androidx.iot.entity.ResponseBody;
+import androidx.iot.entity.Wifi;
 import androidx.iot.log.LogLevel;
 import androidx.iot.mqtt.Imqtt;
+import androidx.iot.net.NetworkState;
 import androidx.iot.utils.Apk;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -352,6 +356,13 @@ public class Alink {
     }
 
     /**
+     * 设备上报OTA模块版本
+     */
+    public void publishOTAVersion() {
+        publishOTAVersion(null, Apk.getVersionName(license.getContext()));
+    }
+
+    /**
      * 设备上报升级进度
      *
      * @param step   OTA升级进度。
@@ -482,6 +493,28 @@ public class Alink {
         JSONObjectPut(params, "model", "format=simple|quantity=batch|time=history");
         JSONObjectPut(object, "params", params);
         publish(Topic.PUB_NETWORK, object.toString());
+    }
+
+    /**
+     * 上传网络状态
+     */
+    public void publishNetwork(){
+        if (license==null){
+            return;
+        }
+        WifiManager wifiManager = (WifiManager) license.getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        int rssi = wifiInfo.getRssi();
+        int snr = wifiInfo.getLinkSpeed();
+        int per = (int) (NetworkState.calculatePacketLossRate(license.getContext())*100);
+        Network network = new Network();
+        network.set_time(System.currentTimeMillis());
+        Wifi wifi = new Wifi();
+        wifi.setRssi(String.valueOf(rssi));
+        wifi.setSnr(String.valueOf(snr));
+        wifi.setPer(String.valueOf(per));
+        network.setWifi(wifi);
+        publishNetwork(network);
     }
 
     /**

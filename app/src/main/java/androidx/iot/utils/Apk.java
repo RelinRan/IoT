@@ -140,19 +140,15 @@ public class Apk {
      * @return
      */
     private static int filterHorizontalSymbol(String value) {
-        if (value.contains("-")) {
-            StringBuilder builder = new StringBuilder();
-            String[] across = value.split("-");
-            for (int j = 0; j < across.length; j++) {
-                String acrossValue = across[j];
-                if (isNumeric(acrossValue)) {
-                    builder.append(acrossValue);
-                }
+        StringBuilder builder = new StringBuilder();
+        char[] chars = value.toCharArray();
+        for (int j = 0; j < chars.length; j++) {
+            char charItem = chars[j];
+            if (isNumeric(String.valueOf(charItem))) {
+                builder.append(charItem);
             }
-            return builder.length() == 0 ? 0 : Integer.parseInt(builder.toString());
-        } else {
-            return isNumeric(value) ? Integer.parseInt(value) : 0;
         }
+        return builder.length() == 0 ? 0 : Integer.parseInt(builder.toString());
     }
 
     /**

@@ -5,6 +5,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.TrafficStats;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -118,6 +119,37 @@ public class NetworkState {
             return "CELLULAR";
         }
         return "UNKNOWN";
+    }
+
+    /***
+     * 计算网络丢包率
+     * @param context
+     * @return
+     */
+    public static float calculatePacketLossRate(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return -1.0f;
+        }
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        if (networkInfo == null || !networkInfo.isConnected()) {
+            return -1.0f;
+        }
+        // 获取网络接口的数据流量信息
+        long txPackets = TrafficStats.getUidTxPackets(android.os.Process.myUid());
+        long rxPackets = TrafficStats.getUidRxPackets(android.os.Process.myUid());
+        // 计算丢包率
+        if (txPackets == TrafficStats.UNSUPPORTED || rxPackets == TrafficStats.UNSUPPORTED) {
+            // 不支持获取流量统计信息
+            return -1.0f;
+        } else {
+            // 丢包率 = (发送的数据包数 - 接收的数据包数) / 发送的数据包数
+            if (txPackets > 0) {
+                return (float) (txPackets - rxPackets) / txPackets;
+            } else {
+                return 0.0f; // 如果没有发送的数据包，则假设丢包率为0
+            }
+        }
     }
 
 }
