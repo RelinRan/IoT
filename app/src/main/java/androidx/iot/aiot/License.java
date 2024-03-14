@@ -598,8 +598,8 @@ public class License {
      * 注销三元组信息
      */
     public void revoked() {
-        getLicenseKey().deleteOnExit();
-        getLicenseIni().deleteOnExit();
+        getLicenseKey().delete();
+        getLicenseIni().delete();
     }
 
     /**
