@@ -169,6 +169,7 @@ public class OTADialog extends IoTDialog implements OnDownloadListener {
 
     @Override
     public void onDownloadCompleted(File file) {
+        setCancel(false);
         progressBar.setProgress(100);
         tvProgress.setText("100%");
         handler.send(0, file);
