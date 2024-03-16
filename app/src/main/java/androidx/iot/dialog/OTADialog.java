@@ -1,6 +1,8 @@
 package androidx.iot.dialog;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -13,6 +15,7 @@ import androidx.iot.aiot.Link;
 import androidx.iot.io.Downloader;
 import androidx.iot.io.OnDownloadListener;
 import androidx.iot.utils.Apk;
+import androidx.iot.utils.Shell;
 import androidx.iot.widget.Progressbar;
 
 import java.io.File;
@@ -31,6 +34,7 @@ public class OTADialog extends IoTDialog implements OnDownloadListener {
 
     private Alink alink;
     private boolean aliot = true;
+    private InstallHandler handler;
 
     public OTADialog(@NonNull Context context) {
         super(context);
@@ -60,6 +64,7 @@ public class OTADialog extends IoTDialog implements OnDownloadListener {
         addClick(btnCancel);
         progressBar.setMax(100);
         setCanceledOnTouchOutside(false);
+        handler = new InstallHandler();
     }
 
     @Override
@@ -166,20 +171,51 @@ public class OTADialog extends IoTDialog implements OnDownloadListener {
     public void onDownloadCompleted(File file) {
         progressBar.setProgress(100);
         tvProgress.setText("100%");
-        if (isAliot()) {
-            alink.publishProgress(100, "升级完成", null);
-        }
-        Log.d(TAG, "download completed file = " + file.getAbsolutePath());
-        Apk.install(getContext(), file.getAbsolutePath());
+        handler.send(0, file);
     }
 
     @Override
     public void onDownloadFailed(Exception e) {
         dismiss();
         Log.d(TAG, "download failed " + e.toString());
-        if (isAliot()) {
+        if (isAliot() && alink != null) {
             alink.publishProgress(-2, "下载失败", null);
         }
     }
 
+    private class InstallHandler extends Handler {
+
+        /**
+         * 发送消息
+         *
+         * @param what 类型
+         * @param file 文件
+         */
+        public void send(int what, File file) {
+            Message msg = obtainMessage();
+            msg.what = what;
+            msg.obj = file.getAbsolutePath();
+            sendMessageDelayed(msg, 300);
+        }
+
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            File file = new File((String) msg.obj);
+            switch (msg.what) {
+                case 0:
+                    Log.d(TAG, "download completed file = " + file.getAbsolutePath());
+                    if (isAliot() && alink != null) {
+                        alink.publishProgress(100, "升级完成", null);
+                        Log.d(TAG, "upload upgrade finish status");
+                    }
+                    send(1, file);
+                    break;
+                case 1:
+                    Log.d(TAG, "download progress " + progressBar.getProgress() + "/" + progressBar.getMax() + " install....");
+                    Shell.install(getContext(), file);
+                    break;
+            }
+        }
+    }
 }

@@ -100,4 +100,12 @@ public class Progressbar extends View {
         this.max = max;
         invalidate();
     }
+
+    public int getMax() {
+        return max;
+    }
+
+    public int getProgress() {
+        return progress;
+    }
 }
