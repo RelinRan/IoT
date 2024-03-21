@@ -14,8 +14,9 @@ public interface OnDynamicListener {
 
     /**
      * 动态注册失败
+     *
      * @param e
      */
-    void onDynamicRegisterFailed(MqttException e);
+    void onDynamicRegisterFailure(MqttException e);
 
 }

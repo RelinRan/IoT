@@ -11,14 +11,14 @@ public class DynamicBody {
     private MqttException exception;
     private OnDynamicListener listener;
 
-    public DynamicBody(MqttException exception, OnDynamicListener listener) {
-        this.exception = exception;
-        this.listener = listener;
-    }
-
     public DynamicBody(String topic, String payload, OnDynamicListener listener) {
         this.topic = topic;
         this.payload = payload;
+        this.listener = listener;
+    }
+
+    public DynamicBody(MqttException exception, OnDynamicListener listener) {
+        this.exception = exception;
         this.listener = listener;
     }
 
