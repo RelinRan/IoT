@@ -1,5 +1,6 @@
 package androidx.iot.log;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.util.DisplayMetrics;
 
@@ -7,6 +8,7 @@ import androidx.iot.aiot.License;
 import androidx.iot.mqtt.Console;
 import androidx.iot.utils.Apk;
 import androidx.iot.utils.Device;
+import androidx.iot.utils.Memory;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -24,8 +26,8 @@ public class DeviceLog extends LogFile {
     }
 
     @Override
-    protected void initializeParameters(Context context,String project, String dir, String prefix) {
-        super.initializeParameters(context,project, dir, prefix);
+    protected void initializeParameters(Context context, String project, String dir, String prefix) {
+        super.initializeParameters(context, project, dir, prefix);
         format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         setSupportScheduled(false);
     }
@@ -50,6 +52,12 @@ public class DeviceLog extends LogFile {
         //屏幕密度
         float density = getContext().getResources().getDisplayMetrics().density;
         builder.append("Density:" + density + "\n");
+        //内存信息
+        Memory memory = new Memory(getContext());
+        ActivityManager.MemoryInfo memoryInfo = memory.getMemoryInfo();
+        builder.append("TotalMem:" + memory.formatMemorySize(memoryInfo.totalMem) + "\n");
+        builder.append("AvailMem:" + memory.formatMemorySize(memoryInfo.availMem) + "\n");
+        builder.append("LowMemory:" + memoryInfo.lowMemory + "\n");
         Console.i(TAG, builder.toString());
         write(builder.toString(), false);
     }
