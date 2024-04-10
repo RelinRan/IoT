@@ -13,8 +13,8 @@ import java.util.concurrent.Future;
 
 /**
  * 属性值文件
- * 读取数据调用{@link #load()}之后再调用{@link #getInt(String, int)}才能保证获取的是最新数据
- * 保存数据调用{@link #put(String, int)}之后需要调用{@link #store(String)}才能保存数据
+ * 读取数据调用{@link #flush()}之后再调用{@link #getInt(String, int)}才能保证获取的是最新数据
+ * 保存数据调用{@link #put(String, int)}之后需要调用{@link #apply(String)}才能保存数据
  * 所有操作完毕必须调用{@link #close()}释放资源，防止内存泄露。
  */
 public class Pairs {
