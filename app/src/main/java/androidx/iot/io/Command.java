@@ -3,6 +3,8 @@ package androidx.iot.io;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.iot.utils.External;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -77,7 +79,7 @@ public class Command implements Runnable {
      * @return
      */
     public File getDir() {
-        return new File(context.getExternalCacheDir(), dirName);
+        return External.getStorageDir(context,projectName,dirName);
     }
 
     /**
@@ -87,7 +89,7 @@ public class Command implements Runnable {
      * @return
      */
     public File getFile(String url) {
-        return new File(getDir(), createFileName(url));
+        return new File(getDir(), fileName == null ? createFileName(url) : fileName);
     }
 
     /**
@@ -191,11 +193,11 @@ public class Command implements Runnable {
             int contentLength = connection.getContentLength();
             Log.i(TAG, "contentLength: " + contentLength);
             if (code == 416 || downloadedLength == contentLength) {
-                messenger.send(createFile(url));
+                messenger.send(getFile(url));
                 return;
             }
             InputStream is = connection.getInputStream();
-            write(is, contentLength, downloadedLength, createFile(url));
+            write(is, contentLength, downloadedLength, getFile(url));
         } catch (MalformedURLException e) {
             e.printStackTrace();
             messenger.send(e);
@@ -206,20 +208,6 @@ public class Command implements Runnable {
             e.printStackTrace();
             messenger.send(e);
         }
-    }
-
-    /**
-     * 创建文件
-     *
-     * @param url 资源链接
-     * @return
-     */
-    public File createFile(String url) {
-        File dir = new File(context.getExternalCacheDir(), dirName);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-        return new File(dir, fileName == null ? createFileName(url) : fileName);
     }
 
     /**
@@ -249,7 +237,7 @@ public class Command implements Runnable {
      * @return
      */
     public long getDownloadedLength(String url) {
-        File file = createFile(url);
+        File file = getFile(url);
         if (file.exists()) {
             if (isOverride()) {
                 file.delete();
