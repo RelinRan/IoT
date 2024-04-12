@@ -72,7 +72,7 @@ public class WiFiReceiver extends BroadcastReceiver {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             int strength = wifiInfo.getRssi();
             boolean enable = wifiManager.isWifiEnabled();
-            Log.d(TAG, "enable = " + enable);
+            Log.d(TAG, "enable = " + enable+",strength = "+strength);
             if (onWiFiListener != null) {
                 onWiFiListener.onRssiChanged(wifiManager, strength);
             }

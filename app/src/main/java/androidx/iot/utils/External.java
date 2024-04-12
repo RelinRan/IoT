@@ -17,7 +17,7 @@ public class External {
      * @return
      */
     public static boolean isSandbox() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
     }
 
     /**
@@ -41,10 +41,12 @@ public class External {
      * @return
      */
     public static File getStorageDir(Context context, String projectName) {
+        File dir;
         if (isSandbox()) {
-            return context.getExternalFilesDir(null);
+            dir = context.getExternalFilesDir(null);
+        } else {
+            dir = new File(Environment.getExternalStorageDirectory(), projectName);
         }
-        File dir = new File(Environment.getExternalStorageDirectory(), projectName);
         if (!dir.exists()) {
             dir.mkdirs();
         }
