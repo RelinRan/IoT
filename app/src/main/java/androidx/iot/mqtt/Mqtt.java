@@ -11,6 +11,7 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -157,7 +158,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
                 mqttAndroidClient.connect(mqttConnectOptions, null, this);
             }
         } catch (MqttException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return this;
     }
@@ -165,15 +166,15 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
     @Override
     public void disconnect() {
         try {
-            if (mqttAndroidClient != null) {
+            if (mqttAndroidClient != null && mqttAndroidClient.isConnected()) {
                 mqttAndroidClient.unregisterResources();
                 Thread.sleep(100);
                 mqttAndroidClient.disconnect();
             }
-        } catch (MqttException e) {
-            e.printStackTrace();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
+        } catch (MqttException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -194,7 +195,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
                 mqttAndroidClient.connect();
             }
         } catch (MqttException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         if (connectHashMap != null) {
             for (Long key : connectHashMap.keySet()) {
@@ -266,8 +267,10 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
                     Log.i(TAG, "publish id:" + id + " " + topic + " " + payload);
                 }
             }
+        } catch (MqttPersistenceException e) {
+            throw new RuntimeException(e);
         } catch (MqttException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return this;
     }
@@ -285,7 +288,7 @@ public class Mqtt implements Imqtt, MqttCallback, IMqttActionListener {
             }
             mqttAndroidClient.subscribe(topic, 0, null, listener);
         } catch (MqttException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return this;
     }
