@@ -284,7 +284,7 @@ public class Pairs {
                 is.close();
             }
             if (os == null) {
-                if (!file.exists()) {
+                if (file != null && !file.exists()) {
                     file = getFile();
                 }
                 os = new FileOutputStream(file);
