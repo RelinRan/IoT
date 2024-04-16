@@ -4,17 +4,15 @@ import android.content.Context;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * 属性值文件
- * 读取数据调用{@link #flush()}之后再调用{@link #getInt(String, int)}才能保证获取的是最新数据
- * 保存数据调用{@link #put(String, int)}之后需要调用{@link #apply(String)}才能保存数据
+ * 读取数据调用{@link #load()} ()}之后再调用{@link #getInt(String, int)}才能保证获取的是最新数据
+ * 保存数据调用{@link #put(String, int)}之后需要调用{@link #store(String)}才能保存数据
  * 所有操作完毕必须调用{@link #close()}释放资源，防止内存泄露。
  */
 public class Pairs {
@@ -51,11 +49,6 @@ public class Pairs {
      * 读取
      */
     private FileInputStream is;
-
-    private ExecutorService storeService;
-    private Future storeFuture;
-    private ExecutorService loadService;
-    private Future loadFuture;
 
     /**
      * 属性文件构造
@@ -102,9 +95,7 @@ public class Pairs {
         this.fileName = fileName;
         properties = new Properties();
         file = getFile();
-        storeService = Executors.newFixedThreadPool(5);
-        loadService = Executors.newFixedThreadPool(5);
-        flush();
+        load();
     }
 
     /**
@@ -192,7 +183,7 @@ public class Pairs {
      * @param value 值
      */
     public void put(String key, String value) {
-        write().setProperty(key, value);
+        properties.setProperty(key, value);
     }
 
     /**
@@ -274,56 +265,32 @@ public class Pairs {
     }
 
     /**
-     * 写入
-     *
-     * @return
-     */
-    private Properties write() {
-        try {
-            if (is != null) {
-                is.close();
-            }
-            if (os == null) {
-                if (file != null && !file.exists()) {
-                    file = getFile();
-                }
-                os = new FileOutputStream(file);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return properties;
-    }
-
-    /**
      * 存储之前的操作
      *
      * @param comments 描述
      */
-    private void store(String comments) {
+    public void store(String comments) {
         try {
+            if (is != null) {
+                is.close();
+                is = null;
+            }
+            if (os == null) {
+                os = new FileOutputStream(file);
+            }
             properties.store(os, comments);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
     /**
-     * 异步保存设置的信息
-     *
-     * @param comments 描述
+     * 保存设置的信息
      */
-    public void apply(String comments) {
-        storeFuture = storeService.submit(() -> {
-            store(comments);
-        });
-    }
-
-    /**
-     * 异步保存设置的信息
-     */
-    public void apply() {
-        apply("Properties File");
+    public void store() {
+        store("Properties File");
     }
 
     /**
@@ -331,31 +298,23 @@ public class Pairs {
      *
      * @return
      */
-    private Properties load() {
+    public void load() {
         try {
             if (os != null) {
                 os.close();
+                os = null;
             }
-            if (is == null) {
-                if (!file.exists()) {
-                    file = getFile();
-                }
+            if (is == null && file.exists()) {
                 is = new FileInputStream(file);
             }
-            properties.load(is);
-        } catch (Exception e) {
-            e.printStackTrace();
+            if (file.exists()) {
+                properties.load(is);
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return properties;
-    }
-
-    /**
-     * 异步加载刷新数据
-     */
-    public void flush() {
-        loadFuture = loadService.submit(() -> {
-            properties = load();
-        });
     }
 
     /**
@@ -391,12 +350,6 @@ public class Pairs {
      */
     public void release() {
         close();
-        if (storeFuture != null) {
-            storeFuture.cancel(true);
-        }
-        if (loadFuture != null) {
-            loadFuture.cancel(true);
-        }
     }
 
 }
