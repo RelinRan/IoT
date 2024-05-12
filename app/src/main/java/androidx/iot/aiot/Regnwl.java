@@ -24,6 +24,8 @@ public class Regnwl implements Runnable{
     private DynamicHandler handler;
     private ConcurrentHashMap<Long, OnDynamicListener> map;
 
+    private Options options;
+    private MemoryPersistence persistence;
     private MqttClient mqttClient;
     private MqttConnectOptions mqttConnectOptions;
 
@@ -41,8 +43,8 @@ public class Regnwl implements Runnable{
     @Override
     public void run() {
         try {
-            Options options = new Options().regnwl(instanceId, productKey, productSecret, deviceName);
-            MemoryPersistence persistence = new MemoryPersistence();
+            options = new Options().regnwl(instanceId, productKey, productSecret, deviceName);
+            persistence = new MemoryPersistence();
             mqttClient = new MqttClient(url, options.getClientId(), persistence);
             mqttConnectOptions = new MqttConnectOptions();
             mqttConnectOptions.setMqttVersion(4);// MQTT 3.1.1
@@ -65,6 +67,8 @@ public class Regnwl implements Runnable{
      * 释放资源
      */
     public void release(){
+        options = null;
+        persistence = null;
         mqttClient = null;
         mqttConnectOptions = null;
     }
