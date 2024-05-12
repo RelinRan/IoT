@@ -1,19 +1,12 @@
 package androidx.iot.aiot;
 
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.iot.entity.DynamicBody;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -26,19 +19,13 @@ public class Dynamic implements MqttCallback {
 
     private String TAG = Dynamic.class.getSimpleName();
     /**
-     * Mqtt客户端
-     */
-    private MqttClient mqttClient;
-    /**
-     * Mqtt参数
-     */
-    private MqttConnectOptions mqttConnectOptions;
-    /**
      * 动态注册监听
      */
-    private ConcurrentHashMap<Long, OnDynamicListener> map;
+    private Regnwl regnwl;
+    private Register register;
     private DynamicHandler handler;
     private ExecutorService service;
+    private ConcurrentHashMap<Long, OnDynamicListener> map;
 
     public Dynamic() {
         map = new ConcurrentHashMap<>();
@@ -125,26 +112,10 @@ public class Dynamic implements MqttCallback {
      * @return 0：成功
      */
     public void register(String url, String instanceId, String productKey, String productSecret, String deviceName) {
-        service.submit(() -> {
-            try {
-                Options options = new Options().register(instanceId, productKey, productSecret, deviceName);
-                MemoryPersistence persistence = new MemoryPersistence();
-                mqttClient = new MqttClient(url, options.getClientId(), persistence);
-                mqttConnectOptions = new MqttConnectOptions();
-                mqttConnectOptions.setMqttVersion(4);// MQTT 3.1.1
-                mqttConnectOptions.setUserName(options.getUsername());// 用户名
-                mqttConnectOptions.setPassword(options.getPassword().toCharArray());// 密码
-                mqttConnectOptions.setAutomaticReconnect(false);//MQTT动态注册协议规定必须关闭自动重连。
-                mqttClient.setCallback(this);
-                mqttClient.connect(mqttConnectOptions);
-            } catch (MqttException e) {
-                Log.e(TAG, "reason " + e.getReasonCode() + " message " + e.getMessage());
-                e.printStackTrace();
-                for (Long key : map.keySet()) {
-                    handler.send(2, new DynamicBody(e, map.get(key)));
-                }
-            }
-        });
+        if (register == null) {
+            register = new Register(url, instanceId, productKey, productSecret, deviceName, this, handler, map);
+        }
+        service.submit(register);
     }
 
     /**
@@ -189,27 +160,10 @@ public class Dynamic implements MqttCallback {
      * @return 0：成功
      */
     public void regnwl(String url, String instanceId, String productKey, String productSecret, String deviceName) {
-        service.submit(() -> {
-            try {
-                Options options = new Options().regnwl(instanceId, productKey, productSecret, deviceName);
-                MemoryPersistence persistence = new MemoryPersistence();
-                mqttClient = new MqttClient(url, options.getClientId(), persistence);
-                mqttConnectOptions = new MqttConnectOptions();
-                mqttConnectOptions.setMqttVersion(4);// MQTT 3.1.1
-                mqttConnectOptions.setUserName(options.getUsername());// 用户名
-                mqttConnectOptions.setPassword(options.getPassword().toCharArray());// 密码
-                mqttConnectOptions.setAutomaticReconnect(false);//MQTT动态注册协议规定必须关闭自动重连。
-                mqttClient.setCallback(this);
-                Log.i(TAG, url + "\n" + options.getClientId() + "\n" + options.getUsername() + "\n" + options.getPassword());
-                mqttClient.connect(mqttConnectOptions);
-            } catch (MqttException e) {
-                Log.e(TAG, "reason " + e.getReasonCode() + " message " + e.getMessage());
-                e.printStackTrace();
-                for (Long key : map.keySet()) {
-                    handler.send(2, new DynamicBody(e, map.get(key)));
-                }
-            }
-        });
+        if (regnwl == null) {
+            regnwl = new Regnwl(url, instanceId, productKey, productSecret, deviceName, this, handler, map);
+        }
+        service.submit(regnwl);
     }
 
     @Override
@@ -222,7 +176,7 @@ public class Dynamic implements MqttCallback {
         String payload = new String(message.getPayload());
         Log.i(TAG, "received " + topic + " " + payload);
         for (Long key : map.keySet()) {
-            handler.send(1, new DynamicBody(topic, payload, map.get(key)));
+            handler.received(new DynamicBody(topic, payload, map.get(key)));
         }
     }
 
@@ -232,59 +186,27 @@ public class Dynamic implements MqttCallback {
     }
 
     /**
-     * 断开连接
-     */
-    public void disconnect() {
-        if (mqttClient != null && mqttClient.isConnected()) {
-            try {
-                mqttClient.disconnect(400);
-            } catch (MqttException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    public class DynamicHandler extends Handler {
-
-        public void send(int what, DynamicBody body) {
-            Message message = obtainMessage();
-            message.what = what;
-            message.obj = body;
-            sendMessage(message);
-        }
-
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            super.handleMessage(msg);
-            DynamicBody body = (DynamicBody) msg.obj;
-            switch (msg.what) {
-                case 1:
-                    if (body != null && body.getListener() != null) {
-                        body.getListener().onDynamicRegisterReceived(body.getTopic(), body.getPayload());
-                    }
-                    break;
-                case 2:
-                    if (body != null && body.getListener() != null) {
-                        if (body != null && body.getListener() != null) {
-                            body.getListener().onDynamicRegisterFailure(body.getException());
-                        }
-                    }
-                    break;
-            }
-        }
-    }
-
-    /**
      * 释放资源
      */
     public void destroy() {
         if (handler != null) {
-            handler.removeMessages(1);
+            handler.removeReceived();
+            handler.removeFailure();
             handler.removeCallbacksAndMessages(null);
             handler = null;
         }
-        if (service != null) {
+        if (regnwl!=null){
+            regnwl.release();
+            regnwl = null;
         }
+        if (register!=null){
+            register.release();
+            register = null;
+        }
+        service.shutdownNow();
+        service = null;
+        map.clear();
+        map = null;
     }
 
 }
