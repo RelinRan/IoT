@@ -21,6 +21,7 @@ public class Reader {
     private ExecutorService service;
     private Future future;
     private Channels channels;
+    private TextRead textRead;
 
     public Reader(String path) {
         this.file = new File(path);
@@ -29,7 +30,7 @@ public class Reader {
 
     public Reader(File file) {
         this.file = file;
-        service = Executors.newCachedThreadPool();
+
     }
 
     /**
@@ -38,27 +39,32 @@ public class Reader {
      * @param onReadListener
      */
     public void async(OnReadListener onReadListener) {
+        if (service==null){
+            service = Executors.newCachedThreadPool();
+        }
         if (channels == null) {
             channels = new Channels();
         }
-        future = service.submit(() -> {
-            synchronized (file) {
-                String content = sync();
-                if (onReadListener != null) {
-                    channels.read(onReadListener, content.toString());
-                }
-            }
-        });
+        if (textRead == null) {
+            textRead = new TextRead(file, this, channels);
+        }
+        textRead.setCancel(false);
+        textRead.setOnReadListener(onReadListener);
+        future = service.submit(textRead);
     }
 
     /**
      * 取消操作
      */
     public void cancel() {
+        if (textRead != null) {
+            textRead.setCancel(true);
+        }
         if (future != null) {
             future.cancel(true);
         }
         if (channels != null) {
+            channels.removeRead();
             channels.removeCallbacksAndMessages(null);
         }
     }

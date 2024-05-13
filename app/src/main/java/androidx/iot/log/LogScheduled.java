@@ -48,6 +48,8 @@ public class LogScheduled {
      */
     private SimpleDateFormat dateFormat;
 
+    private Schedule schedule;
+
     /**
      * 构造
      *
@@ -122,7 +124,7 @@ public class LogScheduled {
      *
      * @param file
      */
-    private void scanFiles(File file) {
+    public void scanFiles(File file) {
         if (file.isDirectory()) {
             for (File item : file.listFiles()) {
                 if (item.isDirectory()) {
@@ -163,15 +165,22 @@ public class LogScheduled {
      */
     public void start() {
         cancel();
-        future = service.scheduleAtFixedRate(() -> {
-            scanFiles(folder);
-        }, initialDelay, period, unit);
+        if (schedule == null) {
+            schedule = new Schedule(service, this);
+        }
+        schedule.setCancel(false);
+        schedule.setFolder(folder);
+        future = service.scheduleAtFixedRate(schedule, initialDelay, period, unit);
     }
+
 
     /**
      * 取消
      */
     public void cancel() {
+        if (schedule != null) {
+            schedule.setCancel(true);
+        }
         if (future != null) {
             future.cancel(true);
         }
