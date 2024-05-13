@@ -33,6 +33,9 @@ public class TextRead implements Runnable {
         synchronized (file) {
             String content = reader.sync();
             if (onReadListener != null) {
+                if (channels == null) {
+                    channels = new Channels();
+                }
                 channels.read(onReadListener, content.toString());
             }
         }

@@ -42,9 +42,6 @@ public class Reader {
         if (service==null){
             service = Executors.newCachedThreadPool();
         }
-        if (channels == null) {
-            channels = new Channels();
-        }
         if (textRead == null) {
             textRead = new TextRead(file, this, channels);
         }

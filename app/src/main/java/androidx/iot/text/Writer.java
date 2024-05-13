@@ -36,9 +36,6 @@ public class Writer {
         if (service == null) {
             service = Executors.newCachedThreadPool();
         }
-        if (channels==null){
-            channels = new Channels();
-        }
         if (textWrite == null) {
             textWrite = new TextWrite(this, file, channels);
         }
