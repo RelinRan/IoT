@@ -43,7 +43,7 @@ public class Register implements Runnable{
     @Override
     public void run() {
         try {
-            options = new Options().regnwl(instanceId, productKey, productSecret, deviceName);
+            options = new Options().register(instanceId, productKey, productSecret, deviceName);
             persistence = new MemoryPersistence();
             mqttClient = new MqttClient(url, options.getClientId(), persistence);
             mqttConnectOptions = new MqttConnectOptions();
