@@ -3,6 +3,7 @@ package androidx.iot.aiot;
 import android.util.Log;
 
 import androidx.iot.entity.DynamicBody;
+import androidx.iot.handler.DynamicHandler;
 
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;

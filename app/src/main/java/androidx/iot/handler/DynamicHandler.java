@@ -1,4 +1,4 @@
-package androidx.iot.aiot;
+package androidx.iot.handler;
 
 import android.os.Handler;
 import android.os.Message;

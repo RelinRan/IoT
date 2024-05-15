@@ -4,18 +4,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.iot.aiot.License;
-import androidx.iot.aiot.OnLicenseListener;
-import androidx.iot.text.Reader;
+import androidx.iot.aiot.OnMediaLicenseListener;
+import androidx.iot.handler.LicenseHandler;
+import androidx.iot.task.LicenseMedia;
 import androidx.iot.utils.Device;
 
-import java.io.File;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -42,11 +38,15 @@ public class LicenseReceiver extends BroadcastReceiver {
     /**
      * 三元组信息传递者
      */
-    private TriplesMessage triplesMessage;
+    private LicenseHandler handler;
     /**
      * 三元组监听
      */
-    private ConcurrentHashMap<Long, OnLicenseListener> triplesHashMap;
+    private ConcurrentHashMap<Long, OnMediaLicenseListener> map;
+    /**
+     * U盘授权读取
+     */
+    private LicenseMedia licenseMedia;
 
     /**
      * 注册
@@ -54,7 +54,7 @@ public class LicenseReceiver extends BroadcastReceiver {
      * @param context
      */
     public void register(Context context) {
-        triplesMessage = new TriplesMessage();
+        handler = new LicenseHandler();
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
         filter.addAction(Intent.ACTION_MEDIA_REMOVED);
@@ -82,13 +82,14 @@ public class LicenseReceiver extends BroadcastReceiver {
         if (future != null) {
             future.cancel(true);
         }
-        if (triplesMessage != null) {
-            triplesMessage.removeCallbacksAndMessages(null);
-            triplesMessage = null;
+        if (handler != null) {
+            handler.remove();
+            handler.removeCallbacksAndMessages(null);
+            handler = null;
         }
-        if (triplesHashMap != null) {
-            triplesHashMap.clear();
-            triplesHashMap = null;
+        if (map != null) {
+            map.clear();
+            map = null;
         }
         context.unregisterReceiver(this);
     }
@@ -127,7 +128,6 @@ public class LicenseReceiver extends BroadcastReceiver {
         Log.d(TAG, "USB removed");
     }
 
-
     /**
      * 拷贝三元组信息
      *
@@ -140,89 +140,24 @@ public class LicenseReceiver extends BroadcastReceiver {
         if (future != null) {
             future.cancel(true);
         }
-        future = service.submit(() -> {
-            File file = findLicense(new File(path));
-            if (file == null || !file.exists()) {
-                Log.e(TAG, License.acquire().getName() + " file does not exist");
-            } else {
-                Reader reader = new Reader(file);
-                String content = reader.sync();
-                License.acquire().fromJSON(content).granted();
-                if (triplesHashMap != null) {
-                    for (Long key : triplesHashMap.keySet()) {
-                        triplesMessage.send(content, triplesHashMap.get(key));
-                    }
-                }
-                reader.cancel();
-            }
-        });
-    }
-
-    /**
-     * 查找三元组文件
-     *
-     * @param file 路径
-     * @return
-     */
-    private File findLicense(File file) {
-        if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            if (files != null && files.length > 0) {
-                for (File child : files) {
-                    if (child.isDirectory()) {
-                        findLicense(child);
-                    }
-                    String name = child.getName();
-                    Log.d(TAG, name);
-                    if (name.equals(License.acquire().getName())) {
-                        Log.d(TAG, child.getAbsolutePath());
-                        return child;
-                    }
-                }
-            }
+        if (licenseMedia == null) {
+            licenseMedia = new LicenseMedia(path, handler, map);
         }
-        return null;
-    }
-
-    private class TriplesMessage extends Handler {
-
-        public void send(String triples, OnLicenseListener listener) {
-            Message message = obtainMessage();
-            message.what = 100;
-            message.obj = listener;
-            Bundle bundle = new Bundle();
-            bundle.putString("triples", triples);
-            message.setData(bundle);
-            sendMessage(message);
-        }
-
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            super.handleMessage(msg);
-            switch (msg.what) {
-                case 100:
-                    OnLicenseListener listener = (OnLicenseListener) msg.obj;
-                    String triples = msg.getData().getString("triples");
-                    if (listener != null) {
-                        listener.onLicense(triples);
-                    }
-                    break;
-            }
-        }
+        future = service.submit(licenseMedia);
     }
 
     /**
      * 添加三元组信息监听
      *
-     * @param onTriplesListener
+     * @param listener
      * @return 监听Id
      */
-    public long addTriplesListener(OnLicenseListener onTriplesListener) {
-        if (triplesHashMap == null) {
-            triplesHashMap = new ConcurrentHashMap<>();
+    public long addMediaLicenseGrantedListener(OnMediaLicenseListener listener) {
+        if (map == null) {
+            map = new ConcurrentHashMap<>();
         }
-        long tid = System.currentTimeMillis() + triplesHashMap.size() + 1;
-        triplesHashMap.put(tid, onTriplesListener);
+        long tid = System.currentTimeMillis() + map.size() + 1;
+        map.put(tid, listener);
         return tid;
     }
 
@@ -232,14 +167,14 @@ public class LicenseReceiver extends BroadcastReceiver {
      * @param id 监听id
      */
     public void remove(long id) {
-        if (triplesHashMap != null) {
-            triplesHashMap.remove(id);
+        if (map != null) {
+            map.remove(id);
         }
     }
 
     public void clear() {
-        if (triplesHashMap != null) {
-            triplesHashMap.clear();
+        if (map != null) {
+            map.clear();
         }
     }
 

@@ -171,7 +171,7 @@ public class License {
         this.dir = dir;
         this.name = name;
         load();
-        Log.i(TAG, "initialize project = " + project + ",dir = " + dir + ",name = " + name);
+        Log.d(TAG, "initialize project = " + project + ",dir = " + dir + ",name = " + name);
     }
 
     /**
@@ -227,13 +227,13 @@ public class License {
      *
      * @param listener
      */
-    public void register(OnLicenseListener listener) {
+    public void register(OnMediaLicenseListener listener) {
         if (receiver == null) {
             receiver = new LicenseReceiver();
             receiver.register(context);
             register = true;
         }
-        receiver.addTriplesListener(listener);
+        receiver.addMediaLicenseGrantedListener(listener);
     }
 
     /**
@@ -570,23 +570,27 @@ public class License {
     public String getLicense() {
         File licenseKey = getLicenseKey();
         if (!licenseKey.exists()) {
+            Log.d(TAG,"License key not exist");
             return null;
         }
         Reader keyReader = new Reader(licenseKey);
         String key = keyReader.sync();
         keyReader.cancel();
         if (key == null) {
+            Log.d(TAG,"License key content is null");
             return null;
         }
         key = key.replace("\n", "");
         File licenseIni = getLicenseIni();
         if (!licenseIni.exists()) {
+            Log.d(TAG,"License ini not exist");
             return null;
         }
         Reader iniReader = new Reader(licenseIni);
         String ini = iniReader.sync();
         iniReader.cancel();
         if (ini == null) {
+            Log.d(TAG,"License ini content is null");
             return null;
         }
         ini = ini.replace("\n", "");
