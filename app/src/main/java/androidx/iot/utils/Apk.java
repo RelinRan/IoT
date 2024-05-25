@@ -2,6 +2,7 @@ package androidx.iot.utils;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Application;
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
@@ -192,6 +193,21 @@ public class Apk {
      */
     public static Uri getUriForPath(Context context, String path) {
         return getUriForPath(context, path, context.getApplicationContext().getPackageName() + AUTHORITY_SUFFIX);
+    }
+
+    /**
+     * 重启APP
+     *
+     * @param context 上下文
+     */
+    public static void restartApp(Context context) {
+        if (context == null) {
+            return;
+        }
+        Application application = (Application) context;
+        Context baseContext = application.getBaseContext();
+        Intent intent = baseContext.getPackageManager().getLaunchIntentForPackage(baseContext.getPackageName());
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
     }
 
     /**
