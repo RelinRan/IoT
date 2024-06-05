@@ -8,6 +8,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 属性值文件
@@ -49,13 +51,108 @@ public class Pairs {
      * 读取
      */
     private FileInputStream is;
+    /**
+     * 任务
+     */
+    private ExecutorService service;
+    private PairsStore pairsStore;
+    private PairsLoad pairsLoad;
+    /**
+     * 文件操作对象
+     */
+    private static Pairs instance;
+
+    /**
+     * 初始化
+     *
+     * @param context 上下文
+     * @return
+     */
+    public static Pairs initialize(Context context) {
+        if (instance == null) {
+            synchronized (Pairs.class) {
+                if (instance == null) {
+                    instance = new Pairs(context);
+                }
+            }
+        }
+        return instance;
+    }
+
+    /**
+     * 初始化
+     *
+     * @param context     上下文
+     * @param projectName 项目名称
+     * @return
+     */
+    public static Pairs initialize(Context context, String projectName) {
+        if (instance == null) {
+            synchronized (Pairs.class) {
+                if (instance == null) {
+                    instance = new Pairs(context, projectName);
+                }
+            }
+        }
+        return instance;
+    }
+
+    /**
+     * 初始化
+     *
+     * @param context     上下文
+     * @param projectName 项目名称
+     * @param dirName     文件夹名称
+     * @return
+     */
+    public static Pairs initialize(Context context, String projectName, String dirName) {
+        if (instance == null) {
+            synchronized (Pairs.class) {
+                if (instance == null) {
+                    instance = new Pairs(context, projectName, dirName);
+                }
+            }
+        }
+        return instance;
+    }
+
+    /**
+     * 初始化
+     *
+     * @param context     上下文
+     * @param projectName 项目名称
+     * @param dirName     文件夹名称
+     * @param fileName    文件名称
+     * @return
+     */
+    public static Pairs initialize(Context context, String projectName, String dirName, String fileName) {
+        if (instance == null) {
+            synchronized (Pairs.class) {
+                if (instance == null) {
+                    instance = new Pairs(context, projectName, dirName, fileName);
+                }
+            }
+        }
+        return instance;
+    }
+
+    /**
+     * 获取操作对象
+     * @return
+     */
+    public static Pairs acquire() {
+        if (instance == null) {
+            throw new RuntimeException(Pairs.class.getSimpleName() + " not initialize.");
+        }
+        return instance;
+    }
 
     /**
      * 属性文件构造
      *
      * @param context 上下文
      */
-    public Pairs(Context context) {
+    private Pairs(Context context) {
         this(context, "IoT", "Properties", "config.properties");
     }
 
@@ -65,7 +162,7 @@ public class Pairs {
      * @param context     上下文
      * @param projectName 项目名称
      */
-    public Pairs(Context context, String projectName) {
+    private Pairs(Context context, String projectName) {
         this(context, projectName, "Properties", "config.properties");
     }
 
@@ -76,7 +173,7 @@ public class Pairs {
      * @param projectName 项目名称
      * @param dirName     文件夹名称
      */
-    public Pairs(Context context, String projectName, String dirName) {
+    private Pairs(Context context, String projectName, String dirName) {
         this(context, projectName, dirName, "config.properties");
     }
 
@@ -88,11 +185,12 @@ public class Pairs {
      * @param dirName     文件夹名称
      * @param fileName    文件名称
      */
-    public Pairs(Context context, String projectName, String dirName, String fileName) {
+    private Pairs(Context context, String projectName, String dirName, String fileName) {
         this.context = context;
         this.projectName = projectName;
         this.dirName = dirName;
         this.fileName = fileName;
+        service = Executors.newFixedThreadPool(1);
         properties = new Properties();
         file = getFile();
         load();
@@ -104,6 +202,9 @@ public class Pairs {
      * @return
      */
     public File getDirectory() {
+        if (context == null) {
+            return new File("../");
+        }
         return External.getStorageDir(context, projectName, dirName);
     }
 
@@ -265,7 +366,7 @@ public class Pairs {
     }
 
     /**
-     * 存储之前的操作
+     * 同步存储之前的操作
      *
      * @param comments 描述
      */
@@ -275,10 +376,12 @@ public class Pairs {
                 is.close();
                 is = null;
             }
-            if (os == null) {
+            if (os == null && file != null && file.exists()) {
                 os = new FileOutputStream(file);
             }
-            properties.store(os, comments);
+            if (properties != null && os != null) {
+                properties.store(os, comments);
+            }
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
@@ -287,14 +390,34 @@ public class Pairs {
     }
 
     /**
-     * 保存设置的信息
+     * 同步保存设置的信息
      */
     public void store() {
         store("Properties File");
     }
 
+
     /**
-     * 读取文件
+     * 异步保存数据
+     * @param comments 说明文字
+     */
+    public void commit(String comments){
+        if (pairsStore == null) {
+            pairsStore = new PairsStore(this);
+        }
+        pairsStore.setComments(comments);
+        service.submit(pairsStore);
+    }
+
+    /**
+     * 异步保存数据
+     */
+    public void commit(){
+        commit("Properties File");
+    }
+
+    /**
+     * 同步读取文件
      *
      * @return
      */
@@ -304,10 +427,10 @@ public class Pairs {
                 os.close();
                 os = null;
             }
-            if (is == null && file.exists()) {
+            if (is == null && file != null && file.exists()) {
                 is = new FileInputStream(file);
             }
-            if (file.exists()) {
+            if (properties != null && file.exists()) {
                 properties.load(is);
             }
         } catch (FileNotFoundException e) {
@@ -318,12 +441,23 @@ public class Pairs {
     }
 
     /**
-     * 清空数据
+     * 异步获取配置文件内容
+     */
+    public void fetch(){
+        if (pairsLoad==null){
+            pairsLoad = new PairsLoad(this);
+        }
+        service.submit(pairsLoad);
+    }
+
+    /**
+     * 清空数据并异步更新文件
      */
     public Pairs clear() {
-        if (file.exists()) {
-            file.delete();
+        if (properties != null) {
+            properties.clear();
         }
+        commit();
         return this;
     }
 
@@ -341,7 +475,7 @@ public class Pairs {
                 is = null;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

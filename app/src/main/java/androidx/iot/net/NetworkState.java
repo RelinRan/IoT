@@ -5,6 +5,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.net.TrafficStats;
 import android.os.Build;
 import android.telephony.TelephonyManager;
@@ -17,6 +18,29 @@ import android.util.Log;
  * <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
  */
 public class NetworkState {
+
+    /**
+     * 注册监听
+     *
+     * @param context  上下文
+     * @param callback 监听
+     */
+    public static void register(Context context, ConnectivityManager.NetworkCallback callback) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkRequest request = new NetworkRequest.Builder().addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build();
+        connectivityManager.registerNetworkCallback(request, callback);
+    }
+
+    /**
+     * 取消注册
+     *
+     * @param context  上下文
+     * @param callback 监听
+     */
+    public static void unregister(Context context, ConnectivityManager.NetworkCallback callback) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        connectivityManager.unregisterNetworkCallback(callback);
+    }
 
     /**
      * 网络是否可用
