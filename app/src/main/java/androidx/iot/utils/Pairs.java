@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
  */
 public class Pairs {
 
+    private String TAG = Pairs.class.getSimpleName();
     /**
      * 项目名称
      */
@@ -138,6 +139,7 @@ public class Pairs {
 
     /**
      * 获取操作对象
+     *
      * @return
      */
     public static Pairs acquire() {
@@ -202,9 +204,6 @@ public class Pairs {
      * @return
      */
     public File getDirectory() {
-        if (context == null) {
-            return new File("../");
-        }
         return External.getStorageDir(context, projectName, dirName);
     }
 
@@ -214,7 +213,18 @@ public class Pairs {
      * @return
      */
     public File getFile() {
-        return new File(getDirectory(), fileName);
+        if (file != null && file.exists()) {
+            return file;
+        }
+        File properties = new File(getDirectory(), fileName);
+        if (!properties.exists()) {
+            try {
+                properties.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return properties;
     }
 
     /**
@@ -376,6 +386,7 @@ public class Pairs {
                 is.close();
                 is = null;
             }
+            file = getFile();
             if (os == null && file != null && file.exists()) {
                 os = new FileOutputStream(file);
             }
@@ -399,9 +410,10 @@ public class Pairs {
 
     /**
      * 异步保存数据
+     *
      * @param comments 说明文字
      */
-    public void commit(String comments){
+    public void commit(String comments) {
         if (pairsStore == null) {
             pairsStore = new PairsStore(this);
         }
@@ -412,7 +424,7 @@ public class Pairs {
     /**
      * 异步保存数据
      */
-    public void commit(){
+    public void commit() {
         commit("Properties File");
     }
 
@@ -427,10 +439,11 @@ public class Pairs {
                 os.close();
                 os = null;
             }
+            file = getFile();
             if (is == null && file != null && file.exists()) {
                 is = new FileInputStream(file);
             }
-            if (properties != null && file.exists()) {
+            if (properties != null && file != null && file.exists()) {
                 properties.load(is);
             }
         } catch (FileNotFoundException e) {
@@ -443,8 +456,8 @@ public class Pairs {
     /**
      * 异步获取配置文件内容
      */
-    public void fetch(){
-        if (pairsLoad==null){
+    public void fetch() {
+        if (pairsLoad == null) {
             pairsLoad = new PairsLoad(this);
         }
         service.submit(pairsLoad);
