@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.iot.text.OnReadListener;
 import androidx.iot.text.Reader;
 import androidx.iot.text.Writer;
+import androidx.iot.utils.Device;
 import androidx.iot.utils.External;
 
 import java.io.File;
@@ -315,7 +316,11 @@ public class LogFile {
      * @param append  是否追加写入
      */
     public void write(String content, boolean append) {
+        File file = getFile();
         StringBuilder builder = new StringBuilder();
+        if (!file.exists()) {
+            builder.append(Device.getHeader(getContext()));
+        }
         if (isSupportScheduled()) {
             builder.append(getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
             builder.append("    ");
@@ -323,7 +328,7 @@ public class LogFile {
         builder.append(content);
         builder.append("\n");
         if (writer == null) {
-            writer = new Writer(getFile());
+            writer = new Writer(file);
         }
         writer.async(builder.toString(), append, null);
     }

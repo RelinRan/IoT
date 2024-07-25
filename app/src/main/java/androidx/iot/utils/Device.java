@@ -7,7 +7,10 @@ import android.os.Build;
 import android.os.storage.StorageManager;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
+
+import androidx.iot.aiot.License;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -17,6 +20,7 @@ import java.net.Inet4Address;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -195,6 +199,34 @@ public class Device {
             e.printStackTrace();
         }
         return "";
+    }
+
+    /**
+     * 获取设备头部信息
+     * @param context
+     * @return
+     */
+    public static StringBuilder getHeader(Context context) {
+        StringBuilder builder = new StringBuilder();
+        String sn = Device.getUniqueId(context);
+        String eSign = Base64.getEncoder().encodeToString(sn.getBytes(StandardCharsets.UTF_8));
+        builder.append("Company:深圳市安保医疗感控科技股份有限公司").append("\n");
+        builder.append("eSign:").append(eSign).append("\n");
+        builder.append("Application:" + Apk.getApplicationName(context)).append("\n");
+        builder.append("Version Name:" + Apk.getVersionName(context)).append("\n");
+        builder.append("Version Code:" + Apk.getVersionCode(context)).append("\n");
+        builder.append("License:" + License.acquire().isLicensed()).append("\n");
+        builder.append("SN:" + sn).append("\n");
+        builder.append("WIFI IP:" + Device.getWifiIpAddress(context)).append("\n");
+        //分辨率
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        int screenWidth = displayMetrics.widthPixels;
+        int screenHeight = displayMetrics.heightPixels;
+        builder.append("Display:" + screenWidth + " * " + screenHeight).append("\n");
+        //屏幕密度
+        float density = context.getResources().getDisplayMetrics().density;
+        builder.append("Density:" + density).append("\n");
+        return builder;
     }
 
 }
