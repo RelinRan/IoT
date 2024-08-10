@@ -192,7 +192,7 @@ public class Pairs {
         this.projectName = projectName;
         this.dirName = dirName;
         this.fileName = fileName;
-        service = Executors.newFixedThreadPool(1);
+        service = Executors.newCachedThreadPool();
         properties = new Properties();
         file = getFile();
         load();
@@ -380,24 +380,24 @@ public class Pairs {
      *
      * @param comments 描述
      */
-    public void store(String comments) {
-        try {
-            if (is != null) {
-                is.close();
-                is = null;
+    public synchronized void store(String comments) {
+            try {
+                if (is != null) {
+                    is.close();
+                    is = null;
+                }
+                file = getFile();
+                if (os == null && file != null && file.exists()) {
+                    os = new FileOutputStream(file);
+                }
+                if (properties != null && os != null) {
+                    properties.store(os, comments);
+                }
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            file = getFile();
-            if (os == null && file != null && file.exists()) {
-                os = new FileOutputStream(file);
-            }
-            if (properties != null && os != null) {
-                properties.store(os, comments);
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**

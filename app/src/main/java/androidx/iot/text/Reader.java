@@ -1,5 +1,6 @@
 package androidx.iot.text;
 
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -25,12 +26,10 @@ public class Reader {
 
     public Reader(String path) {
         this.file = new File(path);
-        service = Executors.newCachedThreadPool();
     }
 
     public Reader(File file) {
         this.file = file;
-
     }
 
     /**
@@ -41,6 +40,9 @@ public class Reader {
     public void async(OnReadListener onReadListener) {
         if (service==null){
             service = Executors.newCachedThreadPool();
+        }
+        if (channels == null && onReadListener != null) {
+            channels = new Channels(Looper.getMainLooper());
         }
         if (textRead == null) {
             textRead = new TextRead(file, this, channels);
@@ -71,7 +73,7 @@ public class Reader {
      *
      * @return
      */
-    public synchronized String sync() {
+    public String sync() {
         if (!file.exists()) {
             Log.e(TAG, "file is not exist " + file.getAbsolutePath());
             return null;
@@ -94,7 +96,7 @@ public class Reader {
                     reader.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
         return content.toString();

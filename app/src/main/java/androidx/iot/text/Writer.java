@@ -1,5 +1,7 @@
 package androidx.iot.text;
 
+import android.os.Looper;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -36,6 +38,9 @@ public class Writer {
         if (service == null) {
             service = Executors.newCachedThreadPool();
         }
+        if (channels == null && onWriteListener != null) {
+            channels = new Channels(Looper.getMainLooper());
+        }
         if (textWrite == null) {
             textWrite = new TextWrite(this, file, channels);
         }
@@ -70,16 +75,24 @@ public class Writer {
      * @return
      */
     public String sync(String content, boolean append) {
+        BufferedWriter writer = null;
         try {
             if (!file.exists()) {
                 file.createNewFile();
             }
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file, append));
+            writer = new BufferedWriter(new FileWriter(file, append));
             writer.write(content);
             writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        }  catch (IOException e) {
+            throw new RuntimeException(e);
+        }finally {
+            if (writer!=null){
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
         return content;
     }

@@ -6,9 +6,12 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
+import android.util.Log;
 
 import com.tencent.bugly.crashreport.CrashReport;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -106,7 +109,6 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
     }
 
     /**
-     *
      * @return
      */
     public static CrashLog acquire() {
@@ -158,8 +160,9 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      * @return
      */
     private CrashLog(Context context, String project, String dir, String prefix) {
-        super(context,project, dir, prefix);
+        super(context, project, dir, prefix);
         Thread.setDefaultUncaughtExceptionHandler(this);
+        startScheduled();
     }
 
 
@@ -182,15 +185,15 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
      */
     @Override
     public void uncaughtException(Thread thread, Throwable throwable) {
+        Log.d(CrashLog.class.getSimpleName(), throwable.toString());
         if (appId != null) {
             CrashReport.postCatchedException(throwable, thread);
         }
-        throwable.printStackTrace();
         String content = buildApplicationDevice(false) + buildRuntimeException(false, throwable);
         if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
             write(content, true);
         } else {
-            new RuntimeException("sdcard is not mounted").printStackTrace();
+            throw new RuntimeException("sdcard is not mounted");
         }
     }
 
@@ -219,7 +222,7 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
             //项目版本名
             sb.append("│Version Name:").append(pi.versionName).append('\n');
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         sb.append("├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄").append("\n");
         //设备信息
@@ -260,10 +263,10 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
         }
         sb.append("│RuntimeException").append("\n");
         sb.append("├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n");
-        sb.append("│").append(throwable.getCause().toString()).append('\n');
-        for (StackTraceElement element : throwable.getStackTrace()) {
-            sb.append("│").append(element.toString()).append('\n');
-        }
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        throwable.printStackTrace(printWriter);
+        sb.append("│").append(stringWriter).append('\n');
         sb.append("└────────────────────────────────────────────────────────").append("\n");
         return sb.toString();
     }
@@ -272,8 +275,9 @@ public class CrashLog extends LogFile implements Thread.UncaughtExceptionHandler
     public void cancel() {
         super.cancel();
         if (appId != null) {
-            CrashReport.closeBugly();
+            CrashReport.closeCrashReport();
         }
+        crash = null;
     }
 
 }

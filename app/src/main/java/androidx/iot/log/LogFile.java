@@ -79,6 +79,7 @@ public class LogFile {
      */
     private boolean supportScheduled = true;
 
+
     /**
      * 获取上下文
      *
@@ -199,6 +200,7 @@ public class LogFile {
         if (!folder.exists()) {
             folder.mkdirs();
         }
+        builder.setLength(0);
         return folder;
     }
 
@@ -247,7 +249,9 @@ public class LogFile {
             builder.append(data);
         }
         builder.append(suffix);
-        return builder.toString();
+        String name = builder.toString();
+        builder.setLength(0);
+        return name;
     }
 
     /**
@@ -330,7 +334,9 @@ public class LogFile {
         if (writer == null) {
             writer = new Writer(file);
         }
-        writer.async(builder.toString(), append, null);
+        String path = builder.toString();
+        builder.setLength(0);
+        writer.async(path, append, null);
     }
 
     /**
