@@ -20,6 +20,7 @@ public class Writer {
     private Future future;
     private Channels channels;
     private TextWrite textWrite;
+    private BufferedWriter writer;
 
     public Writer(String path) {
         this.file = new File(path);
@@ -39,7 +40,7 @@ public class Writer {
             service = Executors.newCachedThreadPool();
         }
         if (channels == null && onWriteListener != null) {
-            channels = new Channels(Looper.getMainLooper());
+            channels = new Channels();
         }
         if (textWrite == null) {
             textWrite = new TextWrite(this, file, channels);
@@ -75,18 +76,19 @@ public class Writer {
      * @return
      */
     public String sync(String content, boolean append) {
-        BufferedWriter writer = null;
         try {
             if (!file.exists()) {
                 file.createNewFile();
             }
-            writer = new BufferedWriter(new FileWriter(file, append));
+            if (writer == null) {
+                writer = new BufferedWriter(new FileWriter(file, append));
+            }
             writer.write(content);
             writer.flush();
-        }  catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
-        }finally {
-            if (writer!=null){
+        } finally {
+            if (writer != null) {
                 try {
                     writer.close();
                 } catch (IOException e) {

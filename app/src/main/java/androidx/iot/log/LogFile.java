@@ -78,6 +78,7 @@ public class LogFile {
      * 日期是否可用
      */
     private boolean supportScheduled = true;
+    private StringBuilder builder;
 
 
     /**
@@ -186,11 +187,20 @@ public class LogFile {
         this.dir = dir;
     }
 
+    private StringBuilder getBuilder(){
+        if (builder==null){
+            builder = new StringBuilder();
+        }else{
+            builder.setLength(0);
+        }
+        return builder;
+    }
+
     /**
      * 获取文件夹
      */
     public File getFolder() {
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder = getBuilder();
         builder.append(root);
         builder.append(File.separator);
         builder.append(project);
@@ -242,7 +252,7 @@ public class LogFile {
      * @return
      */
     public String getFilename() {
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder = getBuilder();
         builder.append(prefix);
         if (isSupportScheduled()) {
             String data = getFormatDate("yyyy-MM-dd");
@@ -321,7 +331,7 @@ public class LogFile {
      */
     public void write(String content, boolean append) {
         File file = getFile();
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder = getBuilder();
         if (!file.exists()) {
             builder.append(Device.getHeader(getContext()));
         }
