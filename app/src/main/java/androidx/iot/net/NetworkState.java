@@ -5,11 +5,11 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
-import android.net.NetworkRequest;
-import android.net.TrafficStats;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+
+import androidx.annotation.RequiresPermission;
 
 /**
  * 网络状态
@@ -20,36 +20,24 @@ import android.util.Log;
 public class NetworkState {
 
     /**
-     * 注册监听
-     *
-     * @param context  上下文
-     * @param callback 监听
-     */
-    public static void register(Context context, ConnectivityManager.NetworkCallback callback) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkRequest request = new NetworkRequest.Builder().addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build();
-        connectivityManager.registerNetworkCallback(request, callback);
-    }
-
-    /**
-     * 取消注册
-     *
-     * @param context  上下文
-     * @param callback 监听
-     */
-    public static void unregister(Context context, ConnectivityManager.NetworkCallback callback) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        connectivityManager.unregisterNetworkCallback(callback);
-    }
-
-    /**
      * 网络是否可用
      *
      * @param context 上下文
      * @return
      */
+    @RequiresPermission(value = "android.permission.ACCESS_NETWORK_STATE")
     public static boolean isAvailable(Context context) {
         ConnectivityManager manager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        return isAvailable(manager);
+    }
+
+    /**
+     * 网络是否可用
+     * @param manager 网络连接管理
+     * @return
+     */
+    @RequiresPermission(value = "android.permission.ACCESS_NETWORK_STATE")
+    public static boolean isAvailable(ConnectivityManager manager) {
         if (manager != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 Network network = manager.getActiveNetwork();
@@ -80,6 +68,7 @@ public class NetworkState {
      * @param context
      * @return
      */
+    @RequiresPermission(value = "android.permission.ACCESS_NETWORK_STATE")
     public static NetworkType getType(Context context) {
         if (!isAvailable(context)) {
             return NetworkType.UNKNOWN;
@@ -143,37 +132,6 @@ public class NetworkState {
             return "CELLULAR";
         }
         return "UNKNOWN";
-    }
-
-    /***
-     * 计算网络丢包率
-     * @param context
-     * @return
-     */
-    public static float calculatePacketLossRate(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (connectivityManager == null) {
-            return -1.0f;
-        }
-        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        if (networkInfo == null || !networkInfo.isConnected()) {
-            return -1.0f;
-        }
-        // 获取网络接口的数据流量信息
-        long txPackets = TrafficStats.getUidTxPackets(android.os.Process.myUid());
-        long rxPackets = TrafficStats.getUidRxPackets(android.os.Process.myUid());
-        // 计算丢包率
-        if (txPackets == TrafficStats.UNSUPPORTED || rxPackets == TrafficStats.UNSUPPORTED) {
-            // 不支持获取流量统计信息
-            return -1.0f;
-        } else {
-            // 丢包率 = (发送的数据包数 - 接收的数据包数) / 发送的数据包数
-            if (txPackets > 0) {
-                return (float) (txPackets - rxPackets) / txPackets;
-            } else {
-                return 0.0f; // 如果没有发送的数据包，则假设丢包率为0
-            }
-        }
     }
 
 }
