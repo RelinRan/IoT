@@ -5,6 +5,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
@@ -141,21 +142,31 @@ public class Device {
     public static List<String> getRemovableStorageVolumePath(Context context) {
         StorageManager storageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
         List<String> paths = new ArrayList<>();
-        try {
-            Class<?> storageVolumeClazz = Class.forName("android.os.storage.StorageVolume");
-            Method getVolumeList = storageManager.getClass().getMethod("getVolumeList");
-            Method getPath = storageVolumeClazz.getMethod("getPath");
-            Method isRemovable = storageVolumeClazz.getMethod("isRemovable");
-            Object[] storageVolumes = (Object[]) getVolumeList.invoke(storageManager);
-            for (Object storageVolume : storageVolumes) {
-                String path = (String) getPath.invoke(storageVolume);
-                boolean removable = (Boolean) isRemovable.invoke(storageVolume);
-                if (removable) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            List<StorageVolume> storageVolumes = storageManager.getStorageVolumes();
+            for (StorageVolume volume : storageVolumes) {
+                if (volume.isRemovable()) {
+                    String path = volume.getDirectory().getAbsolutePath();
                     paths.add(path);
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        }else{
+            try {
+                Class<?> storageVolumeClazz = Class.forName("android.os.storage.StorageVolume");
+                Method getVolumeList = storageManager.getClass().getMethod("getVolumeList");
+                Method getPath = storageVolumeClazz.getMethod("getPath");
+                Method isRemovable = storageVolumeClazz.getMethod("isRemovable");
+                Object[] storageVolumes = (Object[]) getVolumeList.invoke(storageManager);
+                for (Object storageVolume : storageVolumes) {
+                    String path = (String) getPath.invoke(storageVolume);
+                    boolean removable = (Boolean) isRemovable.invoke(storageVolume);
+                    if (removable) {
+                        paths.add(path);
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
         return paths;
     }
