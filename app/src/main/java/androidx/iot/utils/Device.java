@@ -221,6 +221,7 @@ public class Device {
         StringBuilder builder = new StringBuilder();
         String sn = Device.getUniqueId(context);
         String eSign = Base64.getEncoder().encodeToString(sn.getBytes(StandardCharsets.UTF_8));
+        builder.append("**************************************************************************").append("\n");
         builder.append("Company:深圳市安保医疗感控科技股份有限公司").append("\n");
         builder.append("eSign:").append(eSign).append("\n");
         builder.append("Application:" + Apk.getApplicationName(context)).append("\n");
@@ -237,6 +238,7 @@ public class Device {
         //屏幕密度
         float density = context.getResources().getDisplayMetrics().density;
         builder.append("Density:" + density).append("\n");
+        builder.append("**************************************************************************").append("\n");
         return builder;
     }
 
