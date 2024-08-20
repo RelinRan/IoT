@@ -75,7 +75,7 @@ public class Writer {
      * @param append  是否追加
      * @return
      */
-    public String sync(String content, boolean append) {
+    public synchronized String sync(String content, boolean append) {
         try {
             if (!file.exists()) {
                 file.createNewFile();
@@ -91,6 +91,7 @@ public class Writer {
             if (writer != null) {
                 try {
                     writer.close();
+                    writer = null;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
