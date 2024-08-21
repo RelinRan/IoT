@@ -9,6 +9,7 @@ import androidx.iot.utils.Device;
 import androidx.iot.utils.External;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -332,7 +333,13 @@ public class LogFile {
     public void write(String content, boolean append) {
         File file = getFile();
         StringBuilder builder = getBuilder();
+        //如果文件不存在，新建文件
         if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             builder.append(Device.getHeader(getContext()));
         }
         if (isSupportScheduled()) {
