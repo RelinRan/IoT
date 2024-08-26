@@ -19,6 +19,10 @@ public class TextWrite implements Runnable {
         this.channels = channels;
     }
 
+    public void setFile(File file) {
+        this.file = file;
+    }
+
     public void setContent(String content) {
         this.content = content;
     }
@@ -40,12 +44,10 @@ public class TextWrite implements Runnable {
         if (cancel) {
             return;
         }
-        synchronized (file) {
+        if (writer != null) {
+            writer.setFile(file);
             String value = writer.sync(content, append);
             if (onWriteListener != null) {
-                if (channels == null) {
-                    channels = new Channels();
-                }
                 channels.write(onWriteListener, value);
             }
         }

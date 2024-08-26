@@ -30,6 +30,10 @@ public class Writer {
         this.file = file;
     }
 
+    public void setFile(File file) {
+        this.file = file;
+    }
+
     /**
      * 异步写入数据
      *
@@ -40,15 +44,16 @@ public class Writer {
             service = Executors.newCachedThreadPool();
         }
         if (channels == null && onWriteListener != null) {
-            channels = new Channels();
+            channels = new Channels(Looper.getMainLooper());
         }
         if (textWrite == null) {
             textWrite = new TextWrite(this, file, channels);
         }
+        textWrite.setFile(file);
         textWrite.setCancel(false);
         textWrite.setAppend(append);
-        textWrite.setContent(content);
         textWrite.setOnWriteListener(onWriteListener);
+        textWrite.setContent(content);
         future = service.submit(textWrite);
     }
 

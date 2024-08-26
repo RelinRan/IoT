@@ -9,7 +9,6 @@ import androidx.iot.utils.Device;
 import androidx.iot.utils.External;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -79,7 +78,6 @@ public class LogFile {
      * 日期是否可用
      */
     private boolean supportScheduled = true;
-    private StringBuilder builder;
 
 
     /**
@@ -188,20 +186,11 @@ public class LogFile {
         this.dir = dir;
     }
 
-    private StringBuilder getBuilder(){
-        if (builder==null){
-            builder = new StringBuilder();
-        }else{
-            builder.setLength(0);
-        }
-        return builder;
-    }
-
     /**
      * 获取文件夹
      */
     public File getFolder() {
-        StringBuilder builder = getBuilder();
+        StringBuilder builder = new StringBuilder();
         builder.append(root);
         builder.append(File.separator);
         builder.append(project);
@@ -253,7 +242,7 @@ public class LogFile {
      * @return
      */
     public String getFilename() {
-        StringBuilder builder = getBuilder();
+        StringBuilder builder = new StringBuilder();
         builder.append(prefix);
         if (isSupportScheduled()) {
             String data = getFormatDate("yyyy-MM-dd");
@@ -332,14 +321,9 @@ public class LogFile {
      */
     public void write(String content, boolean append) {
         File file = getFile();
-        StringBuilder builder = getBuilder();
+        StringBuilder builder = new StringBuilder();
         //如果文件不存在，新建文件
         if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
             builder.append(Device.getHeader(getContext()));
         }
         if (isSupportScheduled()) {
@@ -350,10 +334,11 @@ public class LogFile {
         builder.append("\n");
         if (writer == null) {
             writer = new Writer(file);
+        }else{
+            writer.setFile(file);
         }
-        String path = builder.toString();
-        builder.setLength(0);
-        writer.async(path, append, null);
+        String value = builder.toString();
+        writer.async(value, append, null);
     }
 
     /**
