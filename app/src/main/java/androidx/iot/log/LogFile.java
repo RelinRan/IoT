@@ -78,6 +78,10 @@ public class LogFile {
      * 日期是否可用
      */
     private boolean supportScheduled = true;
+    /**
+     * 时间
+     */
+    private Date date;
 
 
     /**
@@ -190,17 +194,17 @@ public class LogFile {
      * 获取文件夹
      */
     public File getFolder() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(root);
-        builder.append(File.separator);
-        builder.append(project);
-        builder.append(File.separator);
-        builder.append(dir);
-        File folder = new File(builder.toString());
+        StringBuffer sb = new StringBuffer();
+        sb.append(root);
+        sb.append(File.separator);
+        sb.append(project);
+        sb.append(File.separator);
+        sb.append(dir);
+        File folder = new File(sb.toString());
         if (!folder.exists()) {
             folder.mkdirs();
         }
-        builder.setLength(0);
+        sb.setLength(0);
         return folder;
     }
 
@@ -242,15 +246,15 @@ public class LogFile {
      * @return
      */
     public String getFilename() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(prefix);
+        StringBuffer sb = new StringBuffer();
+        sb.append(prefix);
         if (isSupportScheduled()) {
             String data = getFormatDate("yyyy-MM-dd");
-            builder.append(data);
+            sb.append(data);
         }
-        builder.append(suffix);
-        String name = builder.toString();
-        builder.setLength(0);
+        sb.append(suffix);
+        String name = sb.toString();
+        sb.setLength(0);
         return name;
     }
 
@@ -291,7 +295,12 @@ public class LogFile {
         if (pattern != null) {
             dateFormat.applyPattern(pattern);
         }
-        return dateFormat.format(new Date());
+        if (date == null) {
+            date = new Date();
+        }
+        date.setTime(System.currentTimeMillis());
+        String value = dateFormat.format(date);
+        return value;
     }
 
     /**
@@ -321,23 +330,23 @@ public class LogFile {
      */
     public void write(String content, boolean append) {
         File file = getFile();
-        StringBuilder builder = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         //如果文件不存在，新建文件
         if (!file.exists()) {
-            builder.append(Device.getHeader(getContext()));
+            sb.append(Device.getHeader(getContext()));
         }
         if (isSupportScheduled()) {
-            builder.append(getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
-            builder.append("    ");
+            sb.append(getFormatDate("yyyy-MM-dd HH:mm:ss.SSS"));
+            sb.append("    ");
         }
-        builder.append(content);
-        builder.append("\n");
+        sb.append(content);
+        sb.append("\n");
         if (writer == null) {
             writer = new Writer(file);
-        }else{
+        } else {
             writer.setFile(file);
         }
-        String value = builder.toString();
+        String value = sb.toString();
         writer.async(value, append, null);
     }
 
