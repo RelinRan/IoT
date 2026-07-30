@@ -2,6 +2,8 @@
 
 [English](README.md)
 
+> 自动发布：推送 `v1.0.0` 这类标签会触发 GitHub Actions，构建 Release AAR、保存详细 Gradle 构建日志和 SHA-256 校验文件，并将 `iot-1.0.0.aar` 发布到 GitHub Release 供用户下载。
+
 本模块主要用于基于阿里云物联网 Alink 协议自主开发 Android 设备端 LinkSDK，同时提供通用 MQTT 发布、订阅和连接能力。
 
 自主 LinkSDK 已覆盖设备认证、属性/事件/服务、OTA、设备日志、远程配置、设备任务、设备分发、网关拓扑、子设备、设备标签、设备影子、网络诊断和 MQTT 文件上传。可选的远程扩展基于阿里云物联网安全远程能力，为 Rockchip 开发板提供 SSH、SFTP 和设备控制。

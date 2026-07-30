@@ -163,6 +163,10 @@ Run the module unit tests from the repository root:
 
 The tests validate Alink payloads, topic paths, batching rules, and remote command behavior.
 
+## Releases
+
+Pushing a tag such as `v1.0.0` triggers the GitHub Actions release workflow. It builds the release AAR, writes a detailed Gradle log and SHA-256 checksum, uploads all files as a workflow artifact, and attaches `iot-1.0.0.aar` to the GitHub Release for download.
+
 ## Security notes
 
 - Do not hard-code product secrets in source control.

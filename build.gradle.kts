@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+version = "1.0.0"
+
 android {
     namespace = "androidx.iot"
     compileSdk = 35
