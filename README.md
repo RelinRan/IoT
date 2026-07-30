@@ -1,6 +1,8 @@
 # IoT Link SDK
 
-The `iot` module provides the Android device-side connectivity layer for Alibaba Cloud IoT Platform. It contains MQTT device authentication, Alink protocol operations, device logs, remote configuration, device jobs, device distribution, OTA messaging, secure tunnel access, system diagnostics, and the built-in SSH/SFTP server. It also customizes Alibaba Cloud IoT secure remote access to provide SSH access and device control for Rockchip development boards.
+This module is an independently developed Android LinkSDK implementation for Alibaba Cloud IoT Platform based on the Alink protocol. It also provides a reusable MQTT client layer for common publish/subscribe scenarios.
+
+The Alink implementation covers device authentication, properties, events, services, OTA, device logs, remote configuration, device jobs, device distribution, gateway topology, sub-devices, tags, device shadow, network diagnostics, and MQTT file upload. The optional remote extension uses Alibaba Cloud IoT secure remote access to provide SSH, SFTP, and device control for Rockchip development boards.
 
 ## Requirements
 
@@ -20,6 +22,23 @@ dependencies {
     implementation(project(":iot"))
 }
 ```
+
+## Generic MQTT
+
+`androidx.iot.mqtt.Mqtt` is the common MQTT client wrapper. Use it when an application only needs MQTT connectivity and does not need Alink message routing.
+
+```kotlin
+val mqtt = Mqtt(context, options, callback)
+mqtt.connect(context, actionListener)
+mqtt.publish(topic, payload)
+mqtt.subscribe(topic, qos = 0)
+```
+
+`Options` contains the broker host, client ID, username, password, product key, and device name. `OptionsBuilder` creates Alibaba Cloud IoT authentication options for `connect`, `connwl`, and dynamic registration flows.
+
+## Alink LinkSDK
+
+`androidx.iot.link.LinkSDK` is the high-level Alink protocol entry point. It manages device registration, MQTT lifecycle, standard Topic subscriptions, Alink request/response payloads, and observable device states.
 
 ## Connect a device
 

@@ -1,5 +1,26 @@
 # IoT Link SDK 中文说明
 
+本模块主要用于基于阿里云物联网 Alink 协议自主开发 Android 设备端 LinkSDK，同时提供通用 MQTT 发布、订阅和连接能力。
+
+自主 LinkSDK 已覆盖设备认证、属性/事件/服务、OTA、设备日志、远程配置、设备任务、设备分发、网关拓扑、子设备、设备标签、设备影子、网络诊断和 MQTT 文件上传。可选的远程扩展基于阿里云物联网安全远程能力，为 Rockchip 开发板提供 SSH、SFTP 和设备控制。
+
+## 通用 MQTT
+
+`androidx.iot.mqtt.Mqtt` 是通用 MQTT 客户端封装。仅需要 MQTT 连接、发布和订阅，而不需要 Alink 消息路由时，可直接使用该类。
+
+```kotlin
+val mqtt = Mqtt(context, options, callback)
+mqtt.connect(context, actionListener)
+mqtt.publish(topic, payload)
+mqtt.subscribe(topic, qos = 0)
+```
+
+`Options` 包含 Broker 地址、客户端 ID、用户名、密码、产品 Key 和设备名称；`OptionsBuilder` 可创建阿里云 IoT 的 `connect`、`connwl` 和动态注册认证参数。
+
+## Alink LinkSDK
+
+`androidx.iot.link.LinkSDK` 是 Alink 协议高级入口，负责设备注册、MQTT 生命周期、标准 Topic 订阅、Alink 请求/响应负载和可观察的设备状态。
+
 ## 网关和设备管理
 
 SDK 还提供拓扑关系增删查、发现设备上报、子设备单个/批量上下线、期望属性查询/删除、设备标签更新/删除、网络诊断、设备影子以及 MQTT 文件上传初始化/分片/取消接口。
