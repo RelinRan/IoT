@@ -1,5 +1,7 @@
 # IoT Link SDK
 
+[中文说明](README.zh-CN.md)
+
 This module is an independently developed Android LinkSDK implementation for Alibaba Cloud IoT Platform based on the Alink protocol. It also provides a reusable MQTT client layer for common publish/subscribe scenarios.
 
 The Alink implementation covers device authentication, properties, events, services, OTA, device logs, remote configuration, device jobs, device distribution, gateway topology, sub-devices, tags, device shadow, network diagnostics, and MQTT file upload. The optional remote extension uses Alibaba Cloud IoT secure remote access to provide SSH, SFTP, and device control for Rockchip development boards.

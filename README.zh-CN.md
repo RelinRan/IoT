@@ -1,5 +1,7 @@
 # IoT Link SDK 中文说明
 
+[English](README.md)
+
 本模块主要用于基于阿里云物联网 Alink 协议自主开发 Android 设备端 LinkSDK，同时提供通用 MQTT 发布、订阅和连接能力。
 
 自主 LinkSDK 已覆盖设备认证、属性/事件/服务、OTA、设备日志、远程配置、设备任务、设备分发、网关拓扑、子设备、设备标签、设备影子、网络诊断和 MQTT 文件上传。可选的远程扩展基于阿里云物联网安全远程能力，为 Rockchip 开发板提供 SSH、SFTP 和设备控制。
