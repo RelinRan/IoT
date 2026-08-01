@@ -14,4 +14,4 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "IoT"
+rootProject.name = "iot-link-android"
