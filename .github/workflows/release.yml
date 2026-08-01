@@ -58,7 +58,9 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts logs
           gradle clean assembleRelease --stacktrace --info 2>&1 | tee logs/gradle-build.log
-          cp build/outputs/aar/IoT-release.aar "artifacts/iot-${{ steps.version.outputs.version }}.aar"
+          aar_path="$(find build/outputs/aar -maxdepth 1 -type f -name '*-release.aar' -print -quit)"
+          test -n "$aar_path"
+          cp "$aar_path" "artifacts/iot-${{ steps.version.outputs.version }}.aar"
           sha256sum artifacts/*.aar | tee logs/sha256.txt
           ls -lh artifacts logs
 
