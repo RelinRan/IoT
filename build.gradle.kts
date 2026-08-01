@@ -6,7 +6,7 @@ plugins {
 version = "1.0.0"
 
 android {
-    namespace = "androidx.iot"
+    namespace = "android.mqtt.iot"
     compileSdk = 35
 
     defaultConfig {

@@ -27,7 +27,7 @@ dependencies {
 
 ## Generic MQTT
 
-`androidx.iot.mqtt.Mqtt` is the common MQTT client wrapper. Use it when an application only needs MQTT connectivity and does not need Alink message routing.
+`android.mqtt.iot.mqtt.Mqtt` is the common MQTT client wrapper. Use it when an application only needs MQTT connectivity and does not need Alink message routing.
 
 ```kotlin
 val mqtt = Mqtt(context, options, callback)
@@ -40,7 +40,7 @@ mqtt.subscribe(topic, qos = 0)
 
 ## Alink LinkSDK
 
-`androidx.iot.link.LinkSDK` is the high-level Alink protocol entry point. It manages device registration, MQTT lifecycle, standard Topic subscriptions, Alink request/response payloads, and observable device states.
+`android.mqtt.iot.link.LinkSDK` is the high-level Alink protocol entry point. It manages device registration, MQTT lifecycle, standard Topic subscriptions, Alink request/response payloads, and observable device states.
 
 ## Connect a device
 
@@ -62,7 +62,7 @@ Connection state is available through `LinkSDK.connectState`; registration state
 
 ## Device logs
 
-The data models are in `androidx.iot.data`:
+The data models are in `android.mqtt.iot.data`:
 
 ```kotlin
 LinkSDK.publishLog(
@@ -116,7 +116,7 @@ LinkSDK.replyDeviceDistribution(messageId, code = 200)
 
 ## OTA and property messages
 
-Use the public `LinkSDK` methods for OTA version/progress reporting, firmware information requests, property publishing, device enable/disable/delete, and secure-tunnel subscription. Topic names are centralized in `androidx.iot.link.Topics`.
+Use the public `LinkSDK` methods for OTA version/progress reporting, firmware information requests, property publishing, device enable/disable/delete, and secure-tunnel subscription. Topic names are centralized in `android.mqtt.iot.link.Topics`.
 
 ## Gateway and device management
 
@@ -151,7 +151,7 @@ LinkSDK.publishFileUploadChunk(
 
 ## Remote SSH/SFTP and diagnostics
 
-The `androidx.iot.remote` package contains the Android interactive shell, SSH/SFTP server, logcat access, process metrics, CPU/GPU/NPU information, memory information, camera information, file operations, and system-time commands. Use `androidx.iot.server.FileServer` and `androidx.iot.remote.SSH` only from a controlled administrative workflow.
+The `android.mqtt.iot.remote` package contains the Android interactive shell, SSH/SFTP server, logcat access, process metrics, CPU/GPU/NPU information, memory information, camera information, file operations, and system-time commands. Use `android.mqtt.iot.server.FileServer` and `android.mqtt.iot.remote.SSH` only from a controlled administrative workflow.
 
 ## Testing
 

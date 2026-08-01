@@ -10,7 +10,7 @@
 
 ## 通用 MQTT
 
-`androidx.iot.mqtt.Mqtt` 是通用 MQTT 客户端封装。仅需要 MQTT 连接、发布和订阅，而不需要 Alink 消息路由时，可直接使用该类。
+`android.mqtt.iot.mqtt.Mqtt` 是通用 MQTT 客户端封装。仅需要 MQTT 连接、发布和订阅，而不需要 Alink 消息路由时，可直接使用该类。
 
 ```kotlin
 val mqtt = Mqtt(context, options, callback)
@@ -23,7 +23,7 @@ mqtt.subscribe(topic, qos = 0)
 
 ## Alink LinkSDK
 
-`androidx.iot.link.LinkSDK` 是 Alink 协议高级入口，负责设备注册、MQTT 生命周期、标准 Topic 订阅、Alink 请求/响应负载和可观察的设备状态。
+`android.mqtt.iot.link.LinkSDK` 是 Alink 协议高级入口，负责设备注册、MQTT 生命周期、标准 Topic 订阅、Alink 请求/响应负载和可观察的设备状态。
 
 ## 网关和设备管理
 
@@ -95,7 +95,7 @@ LinkSDK.initialize(
 
 ## 设备日志
 
-日志数据类位于 `androidx.iot.data`：
+日志数据类位于 `android.mqtt.iot.data`：
 
 ```kotlin
 LinkSDK.publishLog(
@@ -149,11 +149,11 @@ LinkSDK.replyDeviceDistribution(messageId, code = 200)
 
 ## OTA 和属性消息
 
-通过 `LinkSDK` 公共方法完成 OTA 版本/进度上报、固件信息请求、属性上报、设备启用/禁用/删除以及安全隧道订阅。Topic 统一由 `androidx.iot.link.Topics` 管理。
+通过 `LinkSDK` 公共方法完成 OTA 版本/进度上报、固件信息请求、属性上报、设备启用/禁用/删除以及安全隧道订阅。Topic 统一由 `android.mqtt.iot.link.Topics` 管理。
 
 ## SSH/SFTP 和设备监控
 
-`androidx.iot.remote` 包提供 Android 交互式 Shell、SSH/SFTP 服务、logcat、进程指标、CPU/GPU/NPU、内存、摄像头信息、文件操作和系统时间命令。请仅在受控的管理流程中启用 `androidx.iot.server.FileServer` 和 `androidx.iot.remote.SSH`。
+`android.mqtt.iot.remote` 包提供 Android 交互式 Shell、SSH/SFTP 服务、logcat、进程指标、CPU/GPU/NPU、内存、摄像头信息、文件操作和系统时间命令。请仅在受控的管理流程中启用 `android.mqtt.iot.server.FileServer` 和 `android.mqtt.iot.remote.SSH`。
 
 ## 测试
 
