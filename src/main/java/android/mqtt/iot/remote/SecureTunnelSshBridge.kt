@@ -1,7 +1,7 @@
-package android.mqtt.iot.remote
+package androidx.iot.remote
 
 import android.util.Log
-import android.mqtt.iot.data.TunnelProxy
+import androidx.iot.data.TunnelProxy
 import okhttp3.Response
 import java.io.Closeable
 import java.io.IOException
@@ -14,7 +14,9 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-
+/**
+ * 将阿里云安全隧道会话桥接到本地 SSH 服务器。
+ */
 class SecureTunnelSshBridge(
     private val localServiceHost: String = LOCALHOST,
     private val localServicePort: Int = SSH.DEFAULT_PORT,
@@ -67,7 +69,11 @@ class SecureTunnelSshBridge(
 
         try {
             SSH.removePrivilegedPortRedirect(PRIVILEGED_HTTPS_PORT, localServicePort)
-            startSshServer()
+            if (!startSshServer()) {
+                logInfo("local ssh server did not start, skip secure tunnel websocket")
+                close()
+                return
+            }
             scheduleTokenExpiry(proxy.token_expire)
             val tunnelUrl = tunnelUrl(proxy)
             Log.i(TAG, "secure tunnel websocket connect:$tunnelUrl")
@@ -168,8 +174,10 @@ class SecureTunnelSshBridge(
         frame.header.sessionId?.let(::closeSession)
     }
 
-    private fun startSshServer() {
-        if (ssh?.isOpen() == true) return
+    internal fun isOpen(): Boolean = open.get()
+
+    private fun startSshServer(): Boolean {
+        if (ssh?.isOpen() == true) return true
 
         ssh = SSH(
             host = SSH.DEFAULT_HOST,
@@ -191,6 +199,7 @@ class SecureTunnelSshBridge(
             }
         )
         ssh?.open()
+        return ssh?.isOpen() == true
     }
 
     private fun startLocalToTunnelPump(client: SecureTunnelClient, session: Session) {
@@ -205,6 +214,7 @@ class SecureTunnelSshBridge(
                     }
                 }
             } catch (_: IOException) {
+                // 下面的会话清理会通知隧道本地连接已经断开。
             } finally {
                 closeSession(session.id)
                 client.releaseSession(session.id, "local ssh closed", ReleaseCode.DEVICE_SIDE_CLOSE)
@@ -251,6 +261,7 @@ class SecureTunnelSshBridge(
                 Log.i(TAG, message, t)
             }
         } catch (_: RuntimeException) {
+            // 本地 JVM 单元测试无法使用 android.util.Log。
         }
     }
 
@@ -261,6 +272,7 @@ class SecureTunnelSshBridge(
         private const val PRIVILEGED_HTTPS_PORT = 443
         const val SERVICE_TYPE_SSH = "ssh"
         const val OPERATION_CLOSE = "close"
+        const val OPERATION_CONNECT = "connect"
         const val DEFAULT_USERNAME = ""
         const val DEFAULT_PASSWORD = ""
 

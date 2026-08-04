@@ -367,6 +367,23 @@ class AndroidInteractiveShellFactoryTest {
     }
 
     @Test
+    fun catPreservesMultilineFileContentWithoutTableFormatting() {
+        val dir = createTempDir(prefix = "ssh-cat-test")
+        val file = File(dir, "config.txt")
+        val content = "name=value\nmode=active\npath=/data/example\n"
+        file.writeText(content)
+
+        try {
+            val text = runShell("cat ${file.absolutePath}\nexit\n")
+
+            assertTrue(text, text.contains(content))
+            assertFalse(text, text.contains("name : value"))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
     fun ctrlCInterruptsRunningCommand() {
         val command = if (File("/bin/sh").exists()) "sleep 5" else "Start-Sleep -Seconds 5"
         val started = System.currentTimeMillis()

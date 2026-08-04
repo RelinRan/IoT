@@ -1,4 +1,4 @@
-package android.mqtt.iot.link
+package androidx.iot.link
 
 import android.app.ActivityManager
 import android.content.ComponentName
@@ -17,11 +17,11 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import androidx.compose.runtime.MutableState
-import android.mqtt.iot.data.TunnelProxy
-import android.mqtt.iot.mqtt.Options
-import android.mqtt.iot.remote.AndroidInteractiveShellFactory
-import android.mqtt.iot.remote.SSH
-import android.mqtt.iot.remote.SecureTunnelSshBridge
+import androidx.iot.data.TunnelProxy
+import androidx.iot.mqtt.Options
+import androidx.iot.remote.AndroidInteractiveShellFactory
+import androidx.iot.remote.SSH
+import androidx.iot.remote.SecureTunnelSshBridge
 import com.google.gson.Gson
 import java.net.Inet4Address
 import java.net.NetworkInterface
@@ -33,6 +33,15 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
+internal fun shouldReuseSecureTunnel(
+    activeTunnelId: String?,
+    incomingTunnelId: String,
+    operation: String?,
+): Boolean {
+    return activeTunnelId == incomingTunnelId &&
+        operation.equals(SecureTunnelSshBridge.OPERATION_CONNECT, ignoreCase = true)
+}
+
 internal class SecureTunnel(
     private val tunnelState: MutableState<TunnelProxy?>,
     private val publishSecureTunnelProxy: () -> Unit,
@@ -40,7 +49,9 @@ internal class SecureTunnel(
 ) {
     private var secureTunnelBridge: SecureTunnelSshBridge? = null
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
+    private val bridgeExecutor = Executors.newSingleThreadExecutor()
     private var refreshTask: ScheduledFuture<*>? = null
+    private var activeTunnelId: String? = null
     private var lastStartedRemoteApp: AndroidInteractiveShellFactory.RunningAppInfo? = null
     private var lastStartedRemoteAppAt: Long = 0L
 
@@ -62,35 +73,50 @@ internal class SecureTunnel(
             Log.i(TAG, "secure tunnel $source parse failed:$payload")
             return
         }
-        tunnelState.value = tunnel
-        connect(tunnel, options)
+        if (tunnel.operation.equals(SecureTunnelSshBridge.OPERATION_CLOSE, ignoreCase = true)) {
+            tunnelState.value = null
+            bridgeExecutor.execute(::closeBridge)
+        } else {
+            tunnelState.value = tunnel
+            bridgeExecutor.execute { connect(tunnel, options) }
+        }
     }
 
     fun close() {
+        tunnelState.value = null
+        bridgeExecutor.execute(::closeBridge)
+    }
+
+    private fun closeBridge() {
         cancelRefresh()
         secureTunnelBridge?.close()
         secureTunnelBridge = null
-        tunnelState.value = null
+        activeTunnelId = null
     }
 
     private fun connect(proxy: TunnelProxy, options: Options) {
         Log.i(TAG, "secure tunnel proxy received:${proxy.host}:${proxy.port}${proxy.path}")
         if (proxy.operation.orEmpty().equals(SecureTunnelSshBridge.OPERATION_CLOSE, ignoreCase = true)) {
             Log.i(TAG, "secure tunnel close received, close ssh bridge")
-            close()
+            closeBridge()
+            return
+        }
+        if (shouldReuseSecureTunnel(activeTunnelId, proxy.tunnel_id, proxy.operation) && secureTunnelBridge != null) {
+            Log.i(TAG, "secure tunnel duplicate connect ignored:tunnelId=${proxy.tunnel_id}")
+            scheduleRefresh(proxy)
             return
         }
 
         val sshUsername = options.deviceName
-        val sshPassword = options.deviceName.take(6)
+        val sshPassword = options.deviceName.takeLast(6)
         Log.i(
             TAG,
             "secure tunnel endpoint(device websocket):${proxy.host}:${proxy.port}${proxy.path} SSH login username:$sshUsername"
         )
         Log.i(TAG, lanSshClientConnectMessage(sshUsername))
-        secureTunnelBridge?.close()
+        closeBridge()
         val packageManager = options.context.packageManager
-        secureTunnelBridge = SecureTunnelSshBridge(
+        val bridge = SecureTunnelSshBridge(
             sshUsername = sshUsername,
             sshPassword = sshPassword,
             appInfoResolver = { packageName ->
@@ -138,7 +164,14 @@ internal class SecureTunnel(
                 }
             }
         )
-        secureTunnelBridge?.open(proxy)
+        secureTunnelBridge = bridge
+        activeTunnelId = proxy.tunnel_id
+        bridge.open(proxy)
+        if (!bridge.isOpen()) {
+            secureTunnelBridge = null
+            activeTunnelId = null
+            return
+        }
         scheduleRefresh(proxy)
     }
 
@@ -304,7 +337,7 @@ internal class SecureTunnel(
                 "ssh -p ${SSH.DEFAULT_PORT} $username@$address"
             }
         }
-        return "LAN SSH client connect:$commands username:$username password:deviceId first 6 chars"
+        return "LAN SSH client connect:$commands username:$username password:******"
     }
 
     private fun localIpv4Addresses(): List<String> {

@@ -1,4 +1,4 @@
-package android.mqtt.iot.remote
+package androidx.iot.remote
 
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
@@ -26,7 +26,16 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-
+/**
+ * #文件下载
+ * download https://xxxx xxx.apk
+ *
+ * #拉取设备文件到本地
+ * scp -O -P 2222 -r BSD874EF28FA48@192.168.15.109:/sdcard/HandHygiene/db E:\db
+ *
+ * #拷贝本地文件到设备
+ * scp -O -P 2222 -r E:\novel.zip BSD874EF28FA48@192.168.15.109:/sdcard/
+ */
 class AndroidInteractiveShellFactory(
     private val shellPath: String = DEFAULT_SHELL,
     private val promptUser: String = DEFAULT_PROMPT_USER,
@@ -733,7 +742,24 @@ class AndroidInteractiveShellFactory(
                 write("cat: ${target.path}: not a file\r\n")
                 return
             }
-            writeCommandResult(target.readText())
+            // `cat` must preserve the file exactly. Do not pass arbitrary file
+            // content through the command-output table formatter: that would
+            // change whitespace, line breaks, and key/value-looking text.
+            try {
+                target.inputStream().use { input ->
+                    val buffer = ByteArray(FILE_OUTPUT_BUFFER_SIZE)
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        if (count > 0) {
+                            val bytes = if (count == buffer.size) buffer else buffer.copyOf(count)
+                            if (!safeWriteBytes(bytes)) return
+                        }
+                    }
+                }
+            } catch (e: IOException) {
+                write("cat: ${target.path}: ${e.message ?: "read failed"}\r\n")
+            }
         }
 
         private data class FindOptions(
@@ -4644,6 +4670,7 @@ class AndroidInteractiveShellFactory(
             private fun previousHistory(currentLine: String): String? {
                 if (history.isEmpty()) return null
                 if (historyIndex == history.size && currentLine.isNotBlank() && history.lastOrNull() != currentLine) {
+                    // 当前草稿不写入历史记录；按向下键时与常见 Shell 一样回到空白输入行。
                 }
                 historyIndex = (historyIndex - 1).coerceAtLeast(0)
                 return history.getOrNull(historyIndex)
@@ -4715,6 +4742,7 @@ class AndroidInteractiveShellFactory(
         private const val HISTORY_LIMIT = 100
         private const val DOWNLOAD_TIMEOUT_MILLIS = 30_000
         private const val DOWNLOAD_BUFFER_SIZE = 8 * 1024
+        private const val FILE_OUTPUT_BUFFER_SIZE = 8 * 1024
         private const val DOWNLOAD_PROGRESS_INTERVAL_MILLIS = 250L
         private const val TABLE_COLUMN_GAP = 2
         private const val TABLE_MAX_NON_LAST_COLUMN_WIDTH = 32
