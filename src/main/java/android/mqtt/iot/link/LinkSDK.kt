@@ -1,30 +1,30 @@
-package androidx.iot.link
+package android.mqtt.iot.link
 
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.iot.data.OTAPackage
-import androidx.iot.data.DeviceJob
-import androidx.iot.data.DeviceJobNotifyMessage
-import androidx.iot.data.DeviceJobQueryData
-import androidx.iot.data.DeviceDistributionNotification
-import androidx.iot.data.DeviceLogConfigData
-import androidx.iot.data.DeviceLogEntry
-import androidx.iot.data.DeviceTag
-import androidx.iot.data.GatewayDevice
-import androidx.iot.data.SubDeviceSession
-import androidx.iot.data.RemoteConfigFile
-import androidx.iot.data.RemoteConfigPushMessage
-import androidx.iot.data.Received
-import androidx.iot.data.Register
-import androidx.iot.data.Regnwl
-import androidx.iot.data.ServiceProperty
-import androidx.iot.data.TunnelProxy
-import androidx.iot.mqtt.Mqtt
-import androidx.iot.mqtt.Options
-import androidx.iot.mqtt.OptionsBuilder
-import androidx.iot.utils.Store
+import android.mqtt.iot.data.OTAPackage
+import android.mqtt.iot.data.DeviceJob
+import android.mqtt.iot.data.DeviceJobNotifyMessage
+import android.mqtt.iot.data.DeviceJobQueryData
+import android.mqtt.iot.data.DeviceDistributionNotification
+import android.mqtt.iot.data.DeviceLogConfigData
+import android.mqtt.iot.data.DeviceLogEntry
+import android.mqtt.iot.data.DeviceTag
+import android.mqtt.iot.data.GatewayDevice
+import android.mqtt.iot.data.SubDeviceSession
+import android.mqtt.iot.data.RemoteConfigFile
+import android.mqtt.iot.data.RemoteConfigPushMessage
+import android.mqtt.iot.data.Received
+import android.mqtt.iot.data.Register
+import android.mqtt.iot.data.Regnwl
+import android.mqtt.iot.data.ServiceProperty
+import android.mqtt.iot.data.TunnelProxy
+import android.mqtt.iot.mqtt.Mqtt
+import android.mqtt.iot.mqtt.Options
+import android.mqtt.iot.mqtt.OptionsBuilder
+import android.mqtt.iot.utils.Store
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -409,11 +409,11 @@ object LinkSDK : MqttCallbackExtended, IMqttActionListener {
             }
 
             topics().SUB_BOOTSTRAP_NOTIFY() -> {
-                val message: androidx.iot.data.Publish<DeviceDistributionNotification> =
+                val message: android.mqtt.iot.data.Publish<DeviceDistributionNotification> =
                     gson.fromJson(
                         payload,
                         object :
-                            TypeToken<androidx.iot.data.Publish<DeviceDistributionNotification>>() {}.type,
+                            TypeToken<android.mqtt.iot.data.Publish<DeviceDistributionNotification>>() {}.type,
                     )
                 deviceDistributionState.value = message.params
                 operations.replyDeviceDistribution(message.id, 200)
@@ -723,7 +723,7 @@ object LinkSDK : MqttCallbackExtended, IMqttActionListener {
     /** 回报任务作业状态和可选进度。 */
     fun publishJobStatus(
         taskId: String,
-        status: androidx.iot.data.DeviceJobStatus,
+        status: android.mqtt.iot.data.DeviceJobStatus,
         statusDetails: Map<String, Any?> = emptyMap(),
         progress: Int? = null,
     ) = operations.publishJobStatus(taskId, status, statusDetails, progress)

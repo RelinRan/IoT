@@ -1,4 +1,4 @@
-package androidx.iot.remote
+package android.mqtt.iot.remote
 
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase

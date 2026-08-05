@@ -1,4 +1,4 @@
-package androidx.iot.link
+package android.mqtt.iot.link
 
 import android.app.ActivityManager
 import android.content.ComponentName
@@ -17,11 +17,11 @@ import android.util.Log
 import android.util.Range
 import android.util.Size
 import androidx.compose.runtime.MutableState
-import androidx.iot.data.TunnelProxy
-import androidx.iot.mqtt.Options
-import androidx.iot.remote.AndroidInteractiveShellFactory
-import androidx.iot.remote.SSH
-import androidx.iot.remote.SecureTunnelSshBridge
+import android.mqtt.iot.data.TunnelProxy
+import android.mqtt.iot.mqtt.Options
+import android.mqtt.iot.remote.AndroidInteractiveShellFactory
+import android.mqtt.iot.remote.SSH
+import android.mqtt.iot.remote.SecureTunnelSshBridge
 import com.google.gson.Gson
 import java.net.Inet4Address
 import java.net.NetworkInterface

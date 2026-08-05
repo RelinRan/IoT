@@ -60,5 +60,5 @@ dependencies {
 
     api(files("libs/bugly-4.1.9.3.jar"))
     api(files("libs/mqttv3-1.1.0.jar"))
-    api(files("libs/service-1.1.4.jar"))
+    api(files("libs/service-1.1.5.jar"))
 }

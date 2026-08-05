@@ -1,7 +1,7 @@
-package androidx.iot.remote
+package android.mqtt.iot.remote
 
 import android.util.Log
-import androidx.iot.data.TunnelProxy
+import android.mqtt.iot.data.TunnelProxy
 import okhttp3.Response
 import java.io.Closeable
 import java.io.IOException
